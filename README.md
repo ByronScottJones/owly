@@ -60,33 +60,30 @@ and turn it on from the bar.
 
 ## Supported hardware
 
-- **Shared** mode = Wi-Fi stays connected
-- **Exclusive** mode = Wi-Fi is *off* while the machine is visible (see [why](#exclusive-mode))
+**Status:** ✅ both directions work, ❌ tried and fails, ❓ untested\
+**Modes:** *Shared* keeps Wi-Fi connected; *Exclusive* turns it off while visible ([why](#exclusive-mode))
 
 | Card | Driver | Status | Tested on |
 |---|---|---|---|
 | MediaTek MT7925 | `mt7925e` | ✅ Shared | Framework 13, `14c3:0717`, Omarchy 4.0.4 (kernel 7.2.5) |
-| Realtek RTL8852CE | `rtw89_8852ce` | ✅ Shared (opt-in) | Legion Slim 5 16AHP9, `10ec:c852`, Omarchy 4.0.4 (kernel 7.2.5) |
+| Realtek RTL8822BE | `rtw88_8822be` | ✅ Exclusive; shared untested | Crosshair VII Hero, `10ec:b822`, NixOS 26.11 (kernel 7.2.9) |
 | Realtek RTL8852AE | `rtw89_8852ae` | ✅ Shared (opt-in) | ThinkPad P14s Gen 2a, `10ec:8852`, Ubuntu 26.04.1 (kernel 7.0) |
+| Realtek RTL8852CE | `rtw89_8852ce` | ✅ Shared (opt-in) | Legion Slim 5 16AHP9, `10ec:c852`, Omarchy 4.0.4 (kernel 7.2.5) |
+| Intel 9560 | `iwlwifi` | ✅ Exclusive | Lenovo 81SY, `8086:a370`, Omarchy 4.0.0 (kernel 7.2.8) |
 | Intel AX200 | `iwlwifi` | ✅ Exclusive | ThinkPad X1 Yoga, `8086:2723`, NixOS 26.05 (kernel 6.19.8) |
 | Intel AX201 | `iwlwifi` | ✅ Exclusive | • Ubuntu 24.04 (kernel 6.8)<br>• CachyOS (kernel 7.2.9) |
 | Intel AX211 | `iwlwifi` | ✅ Exclusive | • ThinkPad X1, `8086:51f1`, Ubuntu 26.04 (kernel 7.0)<br>• XPS 9320, `8086:51f0`, Arch (kernel 7.2.3)<br>• Legion Pro 7 16IRX8H, `8086:7a70`, Omarchy 4.0.4 (kernel 7.2.3) |
 | Intel BE (Panther Lake) | `iwlwifi` | ✅ Exclusive | XPS 16, `8086:e440`, Arch (kernel 7.2) |
-| Intel 9560 | `iwlwifi` | ✅ Exclusive | Lenovo 81SY, `8086:a370`, Omarchy 4.0.0 (kernel 7.2.8) |
-| Realtek RTL8822BE | `rtw88_8822be` | ✅ Exclusive; shared untested | Crosshair VII Hero, `10ec:b822`, NixOS 26.11 (kernel 7.2.9) |
 | MediaTek MT7921 | `mt7921e` | ❌ Exclusive ([#14](https://github.com/t4t5/omdrop-owl/issues/14)); shared untested | `14c3:7961`, CachyOS (kernel 7.2.9) |
 | MediaTek MT7927 | `mt7925e` | ❌ Shared and exclusive ([#44](https://github.com/t4t5/omdrop-owl/issues/44)) | TP-Link Archer TBE550E, `14c3:7927`, CachyOS (kernel 7.2.9) |
 | Qualcomm WCN6855 (QCNFA765) | `ath11k_pci` | ❌ Shared ([#45](https://github.com/t4t5/omdrop-owl/issues/45)); no ad-hoc mode for exclusive | ThinkPad, `17cb:1103`, CachyOS (kernel 7.2.9) |
+| MediaTek MT7922 (RZ616) | `mt7921e` | ❓ Untested (opt-in) | — |
+| MediaTek MT7612U (USB) | `mt76x2u` | ❓ Untested (opt-in), in progress in [#13](https://github.com/t4t5/omdrop-owl/pull/13) | — |
+| Realtek RTL8852BE | `rtw89_8852be` | ❓ Untested (opt-in) | — |
+| Qualcomm WCN7850 (FastConnect 7800) | `ath12k` | ❓ Untested (opt-in) | — |
+| Intel 9260 | `iwlwifi` | ❓ Exclusive untested | — |
 | Intel AX210 | `iwlwifi` | ❓ Exclusive untested | — |
 | Intel BE200 | `iwlwifi` | ❓ Exclusive untested | — |
-| Intel 9260 | `iwlwifi` | ❓ Exclusive untested | — |
-| MediaTek MT7922 (RZ616) | `mt7921e` | ❓ Untested (opt-in) | — |
-| Qualcomm WCN7850 (FastConnect 7800) | `ath12k` | ❓ Untested (opt-in) | — |
-| Realtek RTL8852BE | `rtw89_8852be` | ❓ Untested (opt-in) | — |
-| MediaTek MT7612U (USB) | `mt76x2u` | ❓ Untested (opt-in), in progress in [#13](https://github.com/t4t5/omdrop-owl/pull/13) | — |
-
-- ✅ means both directions work
-- ❌ means that the mode was tried and fails.
 
 One card name can cover chips that behave differently, so a report from a machine, PCI ID
 (`lspci -nn`) or kernel not listed here helps too.
