@@ -183,7 +183,8 @@ while the machine is visible and restores it on `stop`.
 - Cards with no ad-hoc mode (the MediaTek MT7921, MT7922 and MT7612U) use
   `mode active-monitor` instead: an active monitor carrying the station's MAC
   ACKs in place of the IBSS interface
-  ([#13](https://github.com/t4t5/omdrop-owl/pull/13), by kmod-midori).
+  ([#24](https://github.com/t4t5/omdrop-owl/pull/24), from kmod-midori's
+  [#13](https://github.com/t4t5/omdrop-owl/pull/13)).
 
 ## Development
 
