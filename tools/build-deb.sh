@@ -39,6 +39,8 @@ install -Dm644 "$ROOT/packaging/omdrop-owl.policy" \
   "$D/usr/share/polkit-1/actions/io.github.t4t5.omdrop-owl.policy"
 install -Dm644 "$ROOT/packaging/99-omdrop-owl-unmanaged.conf" \
   "$D/usr/lib/NetworkManager/conf.d/99-omdrop-owl-unmanaged.conf"
+install -Dm644 "$ROOT/packaging/10-omdrop-owl-awdl0.link" \
+  "$D/usr/lib/systemd/network/10-omdrop-owl-awdl0.link"
 DOC=$D/usr/share/doc/$PKG
 install -Dm644 "$ROOT/README.md" "$DOC/README.md"
 install -Dm644 "$UP/owl/COPYING" "$DOC/OWL-GPL-3.0"

@@ -30,8 +30,9 @@ sudo apt install ./omdrop-owl_*.deb
 This builds OWL at the commit pinned in `pins`, with `patches/`,
 and installs it root-owned into `/usr/lib/omdrop` together with
 `omdrop-discoverable` and omdrop-awdl's portable tools, a polkit policy for the
-helper, and a NetworkManager rule keeping `awdl0`, `mon0` and `awdlibss0`
-unmanaged. It conflicts with `brcmfmac-awdl-dkms`: one radio backend at a time.
+helper, a NetworkManager rule keeping `awdl0`, `mon0` and `awdlibss0`
+unmanaged, and a systemd `.link` file that keeps udev from changing `awdl0`'s
+MAC address. It conflicts with `brcmfmac-awdl-dkms`: one radio backend at a time.
 
 </details>
 
@@ -156,7 +157,10 @@ installs the pacman package from the checkout.
 
 Without the package, copy `packaging/99-omdrop-owl-unmanaged.conf` to
 `/etc/NetworkManager/conf.d/` and run `sudo nmcli general reload conf`, or
-NetworkManager manages OWL's interfaces and the phone never shows up.
+NetworkManager manages OWL's interfaces and the phone never shows up. Copy
+`packaging/10-omdrop-owl-awdl0.link` to `/etc/systemd/network/` too: where
+udev's default MAC policy rewrites `awdl0`'s address (Ubuntu 22.04), the phone
+is sent a link-local `awdl0` doesn't have and never connects.
 
 ## Known issues
 

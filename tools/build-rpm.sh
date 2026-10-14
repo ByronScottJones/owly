@@ -45,6 +45,8 @@ install -Dm644 "$ROOT/packaging/omdrop-owl.policy" \
   "$PAYLOAD/usr/share/polkit-1/actions/io.github.t4t5.omdrop-owl.policy"
 install -Dm644 "$ROOT/packaging/99-omdrop-owl-unmanaged.conf" \
   "$PAYLOAD/usr/lib/NetworkManager/conf.d/99-omdrop-owl-unmanaged.conf"
+install -Dm644 "$ROOT/packaging/10-omdrop-owl-awdl0.link" \
+  "$PAYLOAD/usr/lib/systemd/network/10-omdrop-owl-awdl0.link"
 LIC=$PAYLOAD/usr/share/licenses/$PKG
 install -Dm644 "$UP/owl/COPYING" "$LIC/OWL-GPL-3.0"
 install -Dm644 "$UP/omdrop-awdl/LICENSE" "$LIC/omdrop-awdl-LICENSE"
@@ -90,6 +92,7 @@ cp -a %{payload}/. %{buildroot}/
 /usr/lib/omdrop
 /usr/share/polkit-1/actions/io.github.t4t5.omdrop-owl.policy
 /usr/lib/NetworkManager/conf.d/99-omdrop-owl-unmanaged.conf
+/usr/lib/systemd/network/10-omdrop-owl-awdl0.link
 /usr/share/licenses/$PKG
 /usr/share/doc/$PKG
 
