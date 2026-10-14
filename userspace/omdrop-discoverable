@@ -402,7 +402,8 @@ cmd_start() {
     cmd_stop recovered >/dev/null
     [ -e "$RUN/converted" ] && die "Wi-Fi ($(cat "$RUN/exclusive")) is still in ad-hoc mode from the last window and couldn't be switched back. Restarting the computer fixes it." 4
   fi
-  rm -f "$RUN/reason"
+  # The last window's, which a stop after a failed start would act on.
+  rm -f "$RUN/reason" "$RUN/profile" "$RUN/station" "$RUN/pm"
 
   sta=$(station_iface)
   [ -n "$sta" ] || die "no Wi-Fi interface to run AWDL on" 4
@@ -412,6 +413,8 @@ cmd_start() {
     die "$(untested_hint "$drv")" 4
   fi
   [ "$PROF_MODE" = shared ] || [ "$PROF_MODE" = exclusive ] || die "this Wi-Fi card's profile asks for \"$PROF_MODE\" mode, which omdrop-owl doesn't implement yet" 4
+  # Before anything that can fail into cmd_stop, which reads reconnect from it.
+  echo "$drv $PROF_MODE $PROF_MONMAC $PROF_RECONNECT $PROF_PM" > "$RUN/profile"
   phy=$(basename "$(readlink -f "/sys/class/net/$sta/phy80211")")
   if [ "$PROF_MODE" = exclusive ]; then
     gw=none
@@ -440,7 +443,6 @@ cmd_start() {
   esac
   stamac=$(cat "/sys/class/net/$sta/address")
   echo "$sta" > "$RUN/station"
-  echo "$drv $PROF_MODE $PROF_MONMAC $PROF_RECONNECT $PROF_PM" > "$RUN/profile"
   log "station $sta ($stamac, $drv) on ch$chan, gateway $gw; profile: mode=$PROF_MODE mon_mac=$PROF_MONMAC reconnect=$PROF_RECONNECT mt76_pm=$PROF_PM"
 
   iw dev "$MON" del 2>/dev/null
