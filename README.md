@@ -9,8 +9,6 @@ See [supported hardware](#supported-hardware).
 
 ## Install
 
-Install this package (omdrop-owl) first, then [omdrop](https://github.com/netmojo-systems/omdrop-plugin).
-
 On Arch/Omarchy ([AUR](https://aur.archlinux.org/packages/omdrop-owl)):
 
 ```sh
@@ -51,7 +49,7 @@ other rpm-based distros would rename them). `sudo dnf remove omdrop-owl` removes
 
 ## Usage
 
-omdrop-owl uses the [omdrop plugin](https://github.com/netmojo-systems/omdrop-plugin.git) (0.16.0 or newer).
+omdrop-owl needs the [omdrop](https://github.com/netmojo-systems/omdrop-plugin.git) plugin (0.16.0 or newer) to work.
 
 ### On Omarchy (add it as a plugin):
 
