@@ -45,3 +45,15 @@ jobs:
           ! grep -q skipped owl.log
       - name: rpmlint (informational)
         run: rpmlint omdrop-owl-*.rpm || true
+
+  # nix/package.nix hashes the pinned sources, so a pins bump that doesn't
+  # update them fails here.
+  nix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - name: Build the flake
+        run: nix build -L
+      - name: Check the flake
+        run: nix flake check -L

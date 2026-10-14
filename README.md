@@ -47,6 +47,23 @@ This builds the same files as the Debian package into an `.rpm` (Fedora package 
 other rpm-based distros would rename them). `sudo dnf remove omdrop-owl` removes them all.
 </details>
 
+<details>
+<summary>On NixOS (flake)</summary>
+
+```nix
+inputs.omdrop-owl.url = "github:t4t5/omdrop-owl";
+```
+
+```nix
+imports = [ inputs.omdrop-owl.nixosModules.default ];
+services.omdrop-owl.enable = true;
+```
+
+The module installs the helper and its polkit policy, keeps NetworkManager off OWL's interfaces and udev from changing `awdl0`'s MAC address, opens TCP 8771 on `awdl0`, and stops NixOS restarting wpa_supplicant (dropping Wi-Fi) whenever OWL adds or removes an interface. omdrop finds the helper and `send-to-peer` on `PATH`.
+
+The `interface` and `allowUntested` options set `/etc/omdrop/infra-iface` and `/etc/omdrop/allow-untested`.
+</details>
+
 ## Usage
 
 omdrop-owl needs the [omdrop](https://github.com/netmojo-systems/omdrop-plugin.git) plugin (0.16.0 or newer) to work.
