@@ -22,7 +22,7 @@ yay -S omdrop-owl
 
 ```sh
 sudo apt install build-essential cmake git pkg-config dpkg-dev \
-  libev-dev libpcap-dev libnl-3-dev libnl-genl-3-dev
+  libev-dev libpcap-dev libnl-3-dev libnl-genl-3-dev libnl-route-3-dev
 tools/build-deb.sh
 sudo apt install ./omdrop-owl_*.deb
 ```
@@ -69,8 +69,12 @@ The bar icon and panel are Omarchy-only. On other distros, you can use the `omdr
 git clone https://github.com/netmojo-systems/omdrop-plugin.git
 omdrop-plugin/bin/omdrop setup   # installs ~/.local/bin/omdrop and the receiver
 omdrop on 10m                    # visible for 10 minutes
-omdrop send <file> <device>
+omdrop peers -n                  # nearby Apple devices and their names
+omdrop send <device> <file>
+omdrop off
 ```
+
+If something doesn't work, `omdrop doctor` lists what's missing.
 
 Received files land in `~/Downloads`.
 
