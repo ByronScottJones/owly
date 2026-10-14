@@ -3,13 +3,13 @@
 https://github.com/user-attachments/assets/b195ce4c-e078-49be-bc13-44a72b6dc189
 
 AirDrop between iPhones and Linux laptops whose Wi-Fi isn't Apple's Broadcom
-chip. Pairs with [omdrop](https://github.com/brentkearney/omdrop-plugin).
+chip. Pairs with [omdrop](https://github.com/netmojo-systems/omdrop-plugin).
 
 See [supported hardware](#supported-hardware).
 
 ## Install
 
-Install this package (omdrop-owl) first, then [omdrop](https://github.com/brentkearney/omdrop-plugin).
+Install this package (omdrop-owl) first, then [omdrop](https://github.com/netmojo-systems/omdrop-plugin).
 
 On Arch/Omarchy ([AUR](https://aur.archlinux.org/packages/omdrop-owl)):
 
@@ -49,13 +49,30 @@ This builds the same files as the Debian package into an `.rpm` (Fedora package 
 other rpm-based distros would rename them). `sudo dnf remove omdrop-owl` removes them all.
 </details>
 
-Then install omdrop (0.16.0 or newer):
+## Usage
+
+omdrop-owl uses the [omdrop plugin](https://github.com/netmojo-systems/omdrop-plugin.git) (0.16.0 or newer).
+
+### On Omarchy (add it as a plugin):
 
 ```sh
-omarchy plugin add https://github.com/brentkearney/omdrop-plugin.git
+omarchy plugin add https://github.com/netmojo-systems/omdrop-plugin.git
 ```
 
 and turn it on from the bar.
+
+### On other Linux systems:
+
+The bar icon and panel are Omarchy-only. On other distros, you can use the `omdrop` CLI:
+
+```sh
+git clone https://github.com/netmojo-systems/omdrop-plugin.git
+omdrop-plugin/bin/omdrop setup   # installs ~/.local/bin/omdrop and the receiver
+omdrop on 10m                    # visible for 10 minutes
+omdrop send <file> <device>
+```
+
+Received files land in `~/Downloads`.
 
 
 ## Supported hardware
