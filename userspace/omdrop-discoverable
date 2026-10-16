@@ -567,6 +567,7 @@ cmd_start() {
   fi
   : > "$RUN/log"
   : > "$RUN/announce.log"
+  : > "$RUN/hostapd.log"
   # A station the last stop couldn't turn back still holds the cell, or is
   # still a monitor, and exclusive_up would take its state for the original.
   if [ -e "$RUN/converted" ] || [ -e "$RUN/monitor" ]; then
