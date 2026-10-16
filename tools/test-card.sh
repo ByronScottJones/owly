@@ -143,11 +143,11 @@ if command -v NetworkManager >/dev/null && [ "$(nmcli -t -f RUNNING general 2>/d
   step "NetworkManager"
   unmanaged=$(NetworkManager --print-config 2>/dev/null | sed -n 's/^unmanaged-devices=//p' | tr ';,' '\n\n')
   managed=()
-  for n in awdl0 mon0 awdlibss0; do
+  for n in awdl0 mon0 awdlibss0 awdlap0; do
     grep -qx "interface-name:$n" <<< "$unmanaged" || managed+=("$n")
   done
   if [ ${#managed[@]} -eq 0 ]; then
-    result NetworkManager "leaves awdl0, mon0 and awdlibss0 alone"
+    result NetworkManager "leaves awdl0, mon0, awdlibss0 and awdlap0 alone"
   else
     result NetworkManager "would manage ${managed[*]}"
     cat <<EOF

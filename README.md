@@ -28,9 +28,10 @@ sudo apt install ./omdrop-owl_*.deb
 This builds OWL at the commit pinned in `pins`, with `patches/`,
 and installs it root-owned into `/usr/lib/omdrop` together with
 `omdrop-discoverable` and omdrop-awdl's portable tools, a polkit policy for the
-helper, a NetworkManager rule keeping `awdl0`, `mon0` and `awdlibss0`
+helper, a NetworkManager rule keeping `awdl0`, `mon0`, `awdlibss0` and `awdlap0`
 unmanaged, and a systemd `.link` file that keeps udev from changing `awdl0`'s
-MAC address. It conflicts with `brcmfmac-awdl-dkms`: one radio backend at a time.
+MAC address. `hostapd` is recommended: exclusive mode needs it on cards without
+ad-hoc mode. It conflicts with `brcmfmac-awdl-dkms`: one radio backend at a time.
 
 </details>
 
@@ -61,7 +62,7 @@ services.omdrop-owl.enable = true;
 
 The module installs the helper and its polkit policy, keeps NetworkManager off OWL's interfaces and udev from changing `awdl0`'s MAC address, opens TCP 8771 on `awdl0`, and stops NixOS restarting wpa_supplicant (dropping Wi-Fi) whenever OWL adds or removes an interface. omdrop finds the helper and `send-to-peer` on `PATH`.
 
-The `interface` and `allowUntested` options set `/etc/omdrop/infra-iface` and `/etc/omdrop/allow-untested`.
+The `interface`, `channels` and `allowUntested` options set `/etc/omdrop/infra-iface`, `/etc/omdrop/channels` and `/etc/omdrop/allow-untested`.
 </details>
 
 ## Usage
@@ -107,6 +108,7 @@ Received files land in `~/Downloads`.
 | Realtek RTL8852AE | `rtw89_8852ae` | ✅ Shared (opt-in) | ThinkPad P14s Gen 2a, `10ec:8852`, Ubuntu 26.04.1 (kernel 7.0) |
 | Realtek RTL8852BE | `rtw89_8852be` | ✅ Shared (opt-in) | ASUS PRIME B550M-A WIFI II, `10ec:b852`, CachyOS (kernel 7.2.9) |
 | Realtek RTL8852CE | `rtw89_8852ce` | ✅ Shared (opt-in) | Legion Slim 5 16AHP9, `10ec:c852`, Omarchy 4.0.4 (kernel 7.2.5) |
+| Realtek RTL8852BU (USB) | `rtw89_8852bu` | ✅ Exclusive (opt-in), as a second card | USB adapter, `35bc:0108`, NixOS 26.05 (kernel 7.2.9) |
 | Intel 9560 | `iwlwifi` | ✅ Exclusive | Lenovo 81SY, `8086:a370`, Omarchy 4.0.0 (kernel 7.2.8) |
 | Intel AX200 | `iwlwifi` | ✅ Exclusive | ThinkPad X1 Yoga, `8086:2723`, NixOS 26.05 (kernel 6.19.8) |
 | Intel AX201 | `iwlwifi` | ✅ Exclusive | • Ubuntu 24.04 (kernel 6.8)<br>• CachyOS (kernel 7.2.9) |
@@ -156,6 +158,8 @@ Cards that can't inject while connected can try `mode exclusive`, which takes
 Wi-Fi away for the window, or `mode active-monitor` if the card has no ad-hoc
 mode (`iw phy` lists no IBSS) but supports an active monitor.
 
+A USB adapter can run exclusive mode as a second card while the built-in one stays connected: `echo <adapter> | sudo tee /etc/omdrop/infra-iface`, then `nmcli device disconnect <adapter>`. `/etc/omdrop/channels` sets the order exclusive mode tries channels in (default `44 149 6`).
+
 ## How it works
 
 AWDL (the Wi-Fi link AirDrop runs over) is provided by [jedbillyb's OWL fork](https://github.com/jedbillyb/owl).
@@ -179,6 +183,8 @@ while the machine is visible and restores it on `stop`.
   need the Wi-Fi interface itself repurposed for this.
 - The cell uses HT20 on channel 6 because the tested Intel cards reject
   5 GHz IBSS. Beacons every 10 seconds fix discovery after an iPhone restart.
+- Cards without ad-hoc mode use a hidden AP (hostapd) with the station's MAC
+  instead.
 - OWL injects through a monitor interface, advertises our channel in all
   16 slots (`-S pin`), and elects its sync master by metric (`-E`). Unicast
   frames are sent once to avoid retries stalling the queue.

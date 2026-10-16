@@ -11,6 +11,7 @@ let
     "awdl0"
     "mon0"
     "awdlibss0"
+    "awdlap0"
   ];
 in
 {
@@ -38,6 +39,13 @@ in
       default = null;
       example = "wlp0s20f0u1";
       description = "Wi-Fi interface to run AirDrop on (/etc/omdrop/infra-iface). Default: the first managed one.";
+    };
+
+    channels = lib.mkOption {
+      type = lib.types.listOf (lib.types.enum [ 6 44 149 ]);
+      default = [ ];
+      example = [ 149 6 ];
+      description = "Order exclusive mode tries AWDL channels in (/etc/omdrop/channels). Default: 44, 149, 6.";
     };
 
     allowUntested = lib.mkEnableOption "cards whose profile is untested (/etc/omdrop/allow-untested)";
@@ -75,6 +83,7 @@ in
     environment.etc = {
       "omdrop/infra-iface" = lib.mkIf (cfg.interface != null) { text = cfg.interface + "\n"; };
       "omdrop/allow-untested" = lib.mkIf cfg.allowUntested { text = "1\n"; };
+      "omdrop/channels" = lib.mkIf (cfg.channels != [ ]) { text = lib.concatMapStringsSep " " toString cfg.channels + "\n"; };
     };
   };
 }

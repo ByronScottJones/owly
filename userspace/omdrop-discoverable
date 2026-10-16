@@ -46,6 +46,7 @@ OWL_LOG=$RUN/owl.log
 IF=awdl0
 MON=mon0
 IBSS=awdlibss0
+AP=awdlap0
 AWDL_BSSID=00:25:00:ff:94:73
 OWL_BIN=$LIB/owl
 PROFILES=$LIB/owl-profiles
@@ -94,7 +95,7 @@ station_iface() {
   [ -n "$forced" ] && { echo "$forced"; return; }
   for d in /sys/class/net/*/phy80211; do
     name=$(basename "$(dirname "$d")")
-    [ "$name" = "$IF" ] || [ "$name" = "$MON" ] || [ "$name" = "$IBSS" ] && continue
+    [ "$name" = "$IF" ] || [ "$name" = "$MON" ] || [ "$name" = "$IBSS" ] || [ "$name" = "$AP" ] && continue
     iw dev "$name" info 2>/dev/null | grep -q 'type managed' || continue
     echo "$name"
     return
@@ -139,7 +140,7 @@ mt76_dir() { echo "/sys/kernel/debug/ieee80211/$(basename "$(readlink -f "/sys/c
 # radar or disabled is receive-only. That a channel is allowed doesn't mean an
 # ad-hoc cell can start there: the AX201 refuses every 5 GHz one (EINVAL on
 # 149 under a GB regdomain, where 44 is "No IR" until it has an AP there), so
-# exclusive_up tries them in this order.
+# exclusive_up tries them in this order, or in the one $CONF/channels lists.
 # An active monitor gets channel 6 alone. The MT7921/MT7922 (mt7921e) sends
 # unicast injected from it at 1 Mbit/s CCK whatever rate OWL asks for, so on
 # 44 none of the MT7922's reached the air (0 of 132, to an independent
@@ -150,19 +151,21 @@ mt76_dir() { echo "/sys/kernel/debug/ieee80211/$(basename "$(readlink -f "/sys/c
 # 5 s, where on 6 a 1.1 MB one took 27 s and multi-photo transfers stalled.
 # 149 is the 5 GHz channel it was measured on, so it goes first.
 tx_channels() {  # PHY DRIVER
-  local ok c order="5220 5745 2437"
+  local ok c f order
+  ok=$(iw phy "$1" channels 2>/dev/null | awk '
+    /^[[:space:]]*\* [0-9.]+ MHz/ { if (f && ok) print f; f = int($2); ok = !/disabled|[Nn]o IR|[Rr]adar/; next }
+    /[Nn]o IR|[Rr]adar detection/ { ok = 0 }
+    END { if (f && ok) print f }')
+  order=$(cat "$CONF/channels" 2>/dev/null || echo 44 149 6)
   if [ "${PROF_MODE:-}" = active-monitor ]; then
     case "${2:-}" in
-      mt76x2u) order="5745 5220 2437" ;;
-      *) order=2437 ;;
+      mt76x2u) order="149 44 6" ;;
+      *) order=6 ;;
     esac
   fi
-  ok=$(iw phy "$1" channels 2>/dev/null | awk '
-    /^[[:space:]]*\* [0-9]+ MHz/ { if (f && ok) print f; f = $2; ok = !/disabled/; next }
-    /No IR|Radar detection/ { ok = 0 }
-    END { if (f && ok) print f }')
   for c in $order; do
-    grep -qx "$c" <<< "$ok" && echo "$c"
+    case "$c" in 6) f=2437 ;; 44) f=5220 ;; 149) f=5745 ;; *) continue ;; esac
+    grep -qx "$f" <<< "$ok" && echo "$f"
   done
 }
 
@@ -198,6 +201,10 @@ exclusive_up() {  # STA PHY FREQ...
   ip link set "$sta" down
   if [ "${PROF_MODE:-}" = active-monitor ]; then
     monitor_up "$sta" "$phy" "$@"
+    return
+  fi
+  if ! has_ibss "$phy"; then
+    ap_cell "$sta" "$phy" "$@"
     return
   fi
   iw dev "$IBSS" del 2>/dev/null
@@ -280,6 +287,50 @@ monitor_up() {  # STA PHY FREQ...
   return 1
 }
 
+# Only "Supported interface modes" counts: the frame-type tables list IBSS on
+# cards without it.
+has_ibss() {  # PHY
+  iw phy "$1" info 2>/dev/null | awk '
+    /Supported interface modes:/ { f = 1; next }
+    f && !/^\t\t \*/ { f = 0 }
+    f && /\* IBSS$/ { ok = 1 }
+    END { exit !ok }'
+}
+
+# The cell on a card without ad-hoc mode: a hidden AP with the station's MAC.
+# It beacons every 1000 TU rather than the ad-hoc cell's 10000: the RTL8852BU's
+# driver holds starting and stopping an AP for its beacons, so 10 s beacons
+# made a start take 21.6 s and a stop 15 s; at 1 s a start took 12.8 s.
+# Prints the frequency it started on.
+ap_cell() {  # STA PHY FREQ...
+  local sta=$1 phy=$2 f ch mode conf=$RUN/hostapd.conf
+  shift 2
+  command -v hostapd >/dev/null || { log "no ad-hoc mode on $phy, and no hostapd to stand in"; return 1; }
+  iw dev "$AP" del 2>/dev/null
+  iw phy "$phy" interface add "$AP" type __ap || return 1
+  ip link set "$AP" address "$(cat "/sys/class/net/$sta/address")"
+  sysctl -qw "net.ipv6.conf.$AP.disable_ipv6=1" 2>/dev/null
+  nmcli device set "$AP" managed no >/dev/null 2>&1
+  for f in "$@"; do
+    case "$f" in 2437) ch=6 mode=g ;; 5220) ch=44 mode=a ;; 5745) ch=149 mode=a ;; *) continue ;; esac
+    ( umask 077
+      printf '%s\n' "interface=$AP" driver=nl80211 \
+        "ssid=omdrop-$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n')" ignore_broadcast_ssid=1 \
+        "hw_mode=$mode" "channel=$ch" ieee80211n=1 beacon_int=1000 \
+        wpa=2 wpa_key_mgmt=WPA-PSK rsn_pairwise=CCMP \
+        "wpa_passphrase=$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')" > "$conf" )
+    # 9>&-: the daemon must not keep the start lock.
+    hostapd -B -P "$RUN/hostapd.pid" "$conf" >> "$RUN/hostapd.log" 2>&1 9>&- || continue
+    for _ in $(seq 100); do
+      iw dev "$AP" info 2>/dev/null | grep -q "channel $ch " && { echo "$f"; return 0; }
+      sleep 0.05
+    done
+    kill "$(cat "$RUN/hostapd.pid" 2>/dev/null)" 2>/dev/null
+    sleep 0.3
+  done
+  return 1
+}
+
 # NetworkManager reconnects by itself once it has the station back, if the
 # connection has autoconnect on. Otherwise nothing would, so a station it
 # hasn't reconnected within RECONNECT_WAIT gets the connection recorded at
@@ -290,6 +341,9 @@ monitor_up() {  # STA PHY FREQ...
 # station can't be made a station again. `stop` deletes mon0 before this.
 exclusive_down() {
   local sta converted=no ipv6 uuid
+  [ -e "$RUN/hostapd.pid" ] && kill "$(cat "$RUN/hostapd.pid")" 2>/dev/null
+  rm -f "$RUN/hostapd.pid" "$RUN/hostapd.conf"
+  iw dev "$AP" del 2>/dev/null
   iw dev "$IBSS" ibss leave 2>/dev/null
   iw dev "$IBSS" del 2>/dev/null
   sta=$(cat "$RUN/exclusive" 2>/dev/null)
@@ -390,7 +444,11 @@ cmd_probe() {
   else
     [ -x "$OWL_BIN" ] || missing+=("backend|omdrop-owl is installed without OWL ($OWL_BIN). Reinstall omdrop-owl.")
     case "$PROF_MODE" in
-      shared|exclusive) ;;
+      shared) ;;
+      exclusive)
+        if ! command -v hostapd >/dev/null && ! has_ibss "$(basename "$(readlink -f "/sys/class/net/$sta/phy80211")")"; then
+          missing+=("backend|This Wi-Fi card has no ad-hoc mode, so exclusive mode needs hostapd. Install hostapd.")
+        fi ;;
       active-monitor)
         problem=$(active_monitor_problem "$(basename "$(readlink -f "/sys/class/net/$sta/phy80211")")")
         [ -z "$problem" ] || missing+=("backend|$problem") ;;
@@ -480,6 +538,12 @@ supervise() {
       log "$MON is gone; the driver may have reloaded"
       exec "$SELF" stop radio-lost
     fi
+    # The hidden AP (ap_cell) is only up while hostapd is: without it nothing
+    # ACKs the phone, though OWL and mon0 carry on.
+    if [ -e "$RUN/hostapd.pid" ] && ! alive "$(pid_of hostapd)" hostapd; then
+      log "hostapd exited: $(tail -1 "$RUN/hostapd.log" 2>/dev/null)"
+      exec "$SELF" stop hostapd-exited
+    fi
     python3 "$LIB/awdl-airdrop-adv.py" --iface "$IF" --plain --flags "$ADV_FLAGS" --port 8771 \
       $burst >> "$RUN/announce.log" 2>&1
     sleep "$ADV_INTERVAL"
@@ -535,7 +599,7 @@ cmd_start() {
     if ! ap=$(exclusive_up "$sta" "$phy" $freqs); then
       cmd_stop start-failed >/dev/null
       [ "$PROF_MODE" = active-monitor ] && die "could not set up the active monitor $MON on any of AirDrop's channels" 4
-      die "could not start the ad-hoc interface $IBSS on any of AirDrop's channels" 4
+      die "could not start AWDL's cell ($IBSS or $AP) on any of AirDrop's channels" 4
     fi
   else
     # Wi-Fi takes a few seconds after a driver reload to associate and get an

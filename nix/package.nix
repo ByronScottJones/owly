@@ -15,6 +15,7 @@
   gawk,
   gnugrep,
   gnused,
+  hostapd,
   iproute2,
   iputils,
   iw,
@@ -52,6 +53,7 @@ let
     gawk
     gnugrep
     gnused
+    hostapd
     iproute2
     iputils
     iw

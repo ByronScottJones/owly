@@ -71,6 +71,7 @@ Architecture: $ARCH
 Maintainer: omdrop-owl <https://github.com/t4t5/omdrop-owl>
 Installed-Size: $(du -sk "$D" | cut -f1)
 Depends: ${SHLIBS:+$SHLIBS, }$(echo $DEPENDS)
+Recommends: hostapd
 Conflicts: brcmfmac-awdl-dkms
 Section: net
 Priority: optional

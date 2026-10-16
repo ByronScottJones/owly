@@ -67,6 +67,7 @@ License: GPL-3.0-or-later AND GPL-2.0-only AND ISC
 URL: https://github.com/t4t5/omdrop-owl
 BuildArch: $ARCH
 Requires: $REQ
+Recommends: hostapd
 Conflicts: brcmfmac-awdl-dkms
 
 %global payload $PAYLOAD

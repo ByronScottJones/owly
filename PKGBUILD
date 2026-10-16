@@ -21,6 +21,7 @@ depends=('bash' 'python' 'iproute2' 'iputils' 'iw' 'polkit' 'util-linux' 'procps
          'libpcap' 'libev' 'libnl' 'networkmanager' 'keyutils'
          'python-libarchive-c' 'python-pillow' 'python-zeroconf' 'python-ifaddr'
          'bluez' 'python-dbus' 'python-gobject')
+optdepends=('hostapd: exclusive mode on cards without ad-hoc mode (MT7925, RTL8852BU)')
 makedepends=('git' 'cmake' 'gcc')
 # Both own /usr/lib/omdrop: one radio backend at a time.
 conflicts=('brcmfmac-awdl-dkms')
