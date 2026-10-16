@@ -117,9 +117,9 @@ Received files land in `~/Downloads`.
 | Intel BE200 | `iwlwifi` | ✅ Exclusive | GEEKOM IT13 Max, `8086:272b`, Omarchy 4.0.4 (kernel 7.2.5) |
 | MediaTek MT7921 | `mt7921e` | ⚠️ Exclusive, opt-in; shared fails ([#14](https://github.com/t4t5/omdrop-owl/issues/14)) | `14c3:7961`, CachyOS (kernel 7.2.9) |
 | MediaTek MT7922 (RZ616) | `mt7921e` | ⚠️ Exclusive, opt-in; shared fails ([#14](https://github.com/t4t5/omdrop-owl/issues/14)) | Minisforum MS-A2, `14c3:0616`, NixOS 26.05 (kernels 6.18 and 7.2.5) |
-| MediaTek MT7927 | `mt7925e` | ❌ Shared and exclusive ([#44](https://github.com/t4t5/omdrop-owl/issues/44)) | TP-Link Archer TBE550E, `14c3:7927`, CachyOS (kernel 7.2.9) |
+| MediaTek MT7927 | `mt7925e` | ❌ Shared: never heard; active monitor (opt-in) sends, but receiving times out ([#44](https://github.com/t4t5/omdrop-owl/issues/44)) | TP-Link Archer TBE550E, `14c3:7927`, CachyOS (kernel 7.2.9) |
 | Realtek RTL8821CE | `rtw88_8821ce` | ❌ Shared: OWL syncs but no transfer, Wi-Fi often lost after ([#60](https://github.com/t4t5/omdrop-owl/issues/60)); exclusive receives nothing | HP laptop, `10ec:c821`, Omarchy (kernel 7.2.5) |
-| Qualcomm WCN6855 (QCNFA765) | `ath11k_pci` | ❌ Shared ([#45](https://github.com/t4t5/omdrop-owl/issues/45)); no ad-hoc mode for exclusive | ThinkPad, `17cb:1103`, CachyOS (kernel 7.2.9) |
+| Qualcomm WCN6855 (QCNFA765) | `ath11k_pci` | ❌ Can't create the monitor interface both modes need ([#45](https://github.com/t4t5/omdrop-owl/issues/45)) | ThinkPad, `17cb:1103`, CachyOS (kernel 7.2.9) |
 | Qualcomm WCN7850 (FastConnect 7800) | `ath12k_wifi7_pci` | ❌ Shared: receives nothing from the phone ([#40](https://github.com/t4t5/omdrop-owl/issues/40)); exclusive untested | `17cb:1107`, Fedora 44 (kernel 7.2.9) |
 | Intel Dual Band Wireless-AC 7265 | `iwlwifi` | ❌ Exclusive: firmware asserts on every ad-hoc start ([#16](https://github.com/t4t5/omdrop-owl/issues/16)) | Zenbook UX305CA, `8086:095a`, Omarchy 4.0.4 (kernel 7.2.5) |
 | Intel Wireless-AC 8260 | `iwlwifi` | ❌ Exclusive: firmware resets on channel 44; no transfer on 6 | NUC6i7KYK, `8086:24f3`, Home Assistant OS (kernel 6.12) |
@@ -155,11 +155,11 @@ around it varies, which is what the profile records.
 6. Open a pull request adding your line to `userspace/owl-profiles`, and paste
    the report's `summary.txt`. The other files include your router's MAC.
 
-Cards that can't inject while connected can try `mode exclusive`, which takes
-Wi-Fi away for the window, or `mode active-monitor` if the card has no ad-hoc
-mode (`iw phy` lists no IBSS) but supports an active monitor.
+Cards that can't inject while connected can try `mode exclusive`, which takes Wi-Fi away for the window, through a hidden AP if the card has no ad-hoc mode (`iw phy` lists no IBSS; needs `hostapd`). A card that supports an active monitor can try `mode active-monitor` instead.
 
-A USB adapter can run exclusive mode as a second card while the built-in one stays connected: `echo <adapter> | sudo tee /etc/omdrop/infra-iface`, then `nmcli device disconnect <adapter>`. `/etc/omdrop/channels` sets the order exclusive mode tries channels in (default `44 149 6`).
+A USB adapter can run exclusive mode as a second card while the built-in one stays connected: `echo <adapter> | sudo tee /etc/omdrop/infra-iface`, then `nmcli device disconnect <adapter>`. `/etc/omdrop/channels` sets the order exclusive mode tries channels in (default `44 149 6`); active-monitor profiles ignore it.
+
+`/etc/omdrop/aggregation` set to `1` or `0` turns on or off accepting the phone's Block Ack session (`owl -A`), which lets it send aggregated frames: a 30 MB upload to an MT7612U took 14 s instead of 47 s. It's on by default only for the MT7612U, as other cards haven't been measured.
 
 ## How it works
 
@@ -182,24 +182,16 @@ while the machine is visible and restores it on `stop`.
 
 - An ad-hoc (IBSS) interface joins AWDL's BSSID to handle ACKs. Some AX211s
   need the Wi-Fi interface itself repurposed for this.
-- The cell uses HT20 on channel 6 because the tested Intel cards reject
-  5 GHz IBSS. Beacons every 10 seconds fix discovery after an iPhone restart.
-- Cards without ad-hoc mode use a hidden AP (hostapd) with the station's MAC
-  instead.
+- The cell is HT20 and tries channels 44, 149 and 6 in that order, skipping any the card may not transmit on, since an iPhone gives AWDL more slots on 5 GHz. Cards that refuse a 5 GHz cell, like the AX201, end up on 6. Beacons every 10 seconds fix discovery after an iPhone restart.
+- Cards without ad-hoc mode use a hidden AP (hostapd) with the station's MAC instead, on the same channels.
 - OWL injects through a monitor interface, advertises our channel in all
   16 slots (`-S pin`), and elects its sync master by metric (`-E`). Unicast
   frames are sent once to avoid retries stalling the queue.
-- Cards with no ad-hoc mode (the MediaTek MT7921, MT7922 and MT7612U) use
-  `mode active-monitor` instead: an active monitor carrying the station's MAC
-  ACKs in place of the IBSS interface
-  ([#24](https://github.com/t4t5/omdrop-owl/pull/24), from kmod-midori's
-  [#13](https://github.com/t4t5/omdrop-owl/pull/13)).
+- The MediaTek MT7921, MT7922 and MT7612U use `mode active-monitor` instead: an active monitor carrying the station's MAC ACKs in place of the cell, on channel 6 (5 GHz first on the MT7612U) ([#24](https://github.com/t4t5/omdrop-owl/pull/24), from kmod-midori's [#13](https://github.com/t4t5/omdrop-owl/pull/13)).
 
 ## Development
 
-The unit tests (no radio, no root, no network) run with `tools/run-tests.sh`
-and need [`bats`](https://github.com/bats-core/bats-core) and Python. The OWL
-A-MSDU test skips until `just build` has patched OWL.
+The unit tests (no radio, no root, no network) run with `tools/run-tests.sh` and need [`bats`](https://github.com/bats-core/bats-core) and Python. The OWL tests (A-MSDU, padding, Block Ack) skip until `just build` has patched OWL. After pulling a new patch, run it again: a tree patched before then fails them.
 
 `just build` assembles the same files in `build/lib`, and `just test` runs the
 card test against them. On Arch, `makepkg -si` (or `just install`) builds and
@@ -218,17 +210,13 @@ is sent a link-local `awdl0` doesn't have and never connects.
   `start` refuses and says so.
 - **The MT7925 drops off Wi-Fi when the monitor interface is removed** (an
   mt76/firmware bug), so `stop` reconnects Wi-Fi straight after.
-- **The MT7927 starts but is never heard.** It uses the MT7925's driver, so
-  it runs the MT7925's shared profile without an opt-in, but its monitor
-  interface doesn't receive the phone's frames, and the driver has no ad-hoc
-  mode for exclusive ([#44](https://github.com/t4t5/omdrop-owl/issues/44)).
+- **The MT7927 starts but is never heard.** It uses the MT7925's driver, so it runs the MT7925's shared profile without an opt-in, but its monitor interface doesn't receive the phone's frames. With an `active-monitor` line in `/etc/omdrop/owl-profiles` it's heard and can send, but the phone's uploads arrive at about 5 kB/s and time out ([#44](https://github.com/t4t5/omdrop-owl/issues/44)). Exclusive mode through the hidden AP is untested.
 - **The MT7925 sends slower than it receives** (about 490 kB/s against
   1.3 MB/s): injected frames leave at most one every ~2.5 ms.
 - **UFW blocks the receiver**, so the phone never sees this machine. Run
   `omdrop firewall install` to allow TCP 8771 from link-local addresses on
   `awdl0`.
-- **Intel cards are slow**, since AWDL on channel 6 gets few of the iPhone's
-  slots: a 2.4 MB photo takes 10–17 s on an AX201.
+- **Exclusive mode is slow on channel 6**, where cards that refuse a 5 GHz cell (like the AX201) end up, since AWDL there gets few of the iPhone's slots: a 2.4 MB photo takes 10–17 s on an AX201.
 - **The MT7921/MT7922 are unreliable.** `mt7921e` sends injected unicast at
   1 Mbit/s whatever rate is asked for, and not at all on 5 GHz, so discovery
   and the handshake often stall. Close and reopen the share sheet to retry.
