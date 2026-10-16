@@ -21,7 +21,7 @@ depends=('bash' 'python' 'iproute2' 'iputils' 'iw' 'polkit' 'util-linux' 'procps
          'libpcap' 'libev' 'libnl' 'networkmanager' 'keyutils'
          'python-libarchive-c' 'python-pillow' 'python-zeroconf' 'python-ifaddr'
          'bluez' 'python-dbus' 'python-gobject')
-optdepends=('hostapd: exclusive mode on cards without ad-hoc mode (MT7925, RTL8852BU)')
+optdepends=('hostapd: exclusive mode on cards without ad-hoc mode')
 makedepends=('git' 'cmake' 'gcc')
 # Both own /usr/lib/omdrop: one radio backend at a time.
 conflicts=('brcmfmac-awdl-dkms')
@@ -73,8 +73,8 @@ build() {
 }
 
 check() {
-  case "$(build/daemon/owl -S intersect -R 12 -m 02:00:00:00:00:01 -F -E -h 2>&1 || true)" in
-    *"invalid option"*|*"-R takes"*|*"-m takes"*) error "owl lacks -S, -R, -m, -F or -E: the patches did not apply"; return 1 ;;
+  case "$(build/daemon/owl -S intersect -R 12 -m 02:00:00:00:00:01 -F -E -A -h 2>&1 || true)" in
+    *"invalid option"*|*"-R takes"*|*"-m takes"*) error "owl lacks -S, -R, -m, -F, -E or -A: the patches did not apply"; return 1 ;;
   esac
 }
 
