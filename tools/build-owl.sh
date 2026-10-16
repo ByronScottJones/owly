@@ -28,6 +28,9 @@
 #   owl-10-addba-accept.patch  -A: answer a peer's Block Ack session request
 #                           (ADDBA) with success, so it may send A-MPDUs
 #                           (tests/owl_addba.c)
+#   owl-11-rx-flags-init.patch  treat a missing radiotap Flags field as zero,
+#                           instead of reading an uninitialized byte
+#                           (tests/owl_rx_flags.c)
 # Applied in name order: each is a diff against the tree with the previous ones.
 set -eu
 
