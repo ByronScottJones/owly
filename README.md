@@ -112,7 +112,7 @@ Received files land in `~/Downloads`.
 | Intel 9560 | `iwlwifi` | ✅ Exclusive | Lenovo 81SY, `8086:a370`, Omarchy 4.0.0 (kernel 7.2.8) |
 | Intel AX200 | `iwlwifi` | ✅ Exclusive | ThinkPad X1 Yoga, `8086:2723`, NixOS 26.05 (kernel 6.19.8) |
 | Intel AX201 | `iwlwifi` | ✅ Exclusive | • Ubuntu 24.04 (kernel 6.8)<br>• CachyOS (kernel 7.2.9) |
-| Intel AX211 | `iwlwifi` | ✅ Exclusive | • ThinkPad X1, `8086:51f1`, Ubuntu 26.04 (kernel 7.0)<br>• XPS 9320, `8086:51f0`, Arch (kernel 7.2.3)<br>• Legion Pro 7 16IRX8H, `8086:7a70`, Omarchy 4.0.4 (kernel 7.2.3) |
+| Intel AX211 | `iwlwifi` | ✅ Exclusive | • ThinkPad X1, `8086:51f1`, Ubuntu 26.04 (kernel 7.0)<br>• XPS 9320, `8086:51f0`, Arch (kernel 7.2.3)<br>• Legion Pro 7 16IRX8H, `8086:7a70`, Omarchy 4.0.4 (kernel 7.2.3)<br>• TUXEDO InfinityBook Max 15 Gen10 (Arrow Lake), `8086:7740`, Kubuntu 26.04.1 (kernel 7.0) |
 | Intel BE (Panther Lake) | `iwlwifi` | ✅ Exclusive | XPS 16, `8086:e440`, Arch (kernel 7.2) |
 | Intel BE200 | `iwlwifi` | ✅ Exclusive | GEEKOM IT13 Max, `8086:272b`, Omarchy 4.0.4 (kernel 7.2.5) |
 | MediaTek MT7921 | `mt7921e` | ⚠️ Exclusive, opt-in; shared fails ([#14](https://github.com/t4t5/omdrop-owl/issues/14)) | `14c3:7961`, CachyOS (kernel 7.2.9) |
@@ -157,7 +157,7 @@ around it varies, which is what the profile records.
 
 Cards that can't inject while connected can try `mode exclusive`, which takes Wi-Fi away for the window, through a hidden AP if the card has no ad-hoc mode (`iw phy` lists no IBSS; needs `hostapd`). A card that supports an active monitor can try `mode active-monitor` instead.
 
-A USB adapter can run exclusive mode as a second card while the built-in one stays connected: `echo <adapter> | sudo tee /etc/omdrop/infra-iface`, then `nmcli device disconnect <adapter>`. `/etc/omdrop/channels` sets the order exclusive mode tries channels in (default `44 149 6`); active-monitor profiles ignore it.
+A USB adapter can run exclusive mode as a second card while the built-in one stays connected: `echo <adapter> | sudo tee /etc/omdrop/infra-iface`, then `nmcli device disconnect <adapter>`. `/etc/omdrop/channels` sets the order exclusive mode tries channels in (default `44 149 6`, or `6` for `iwlwifi`); active-monitor profiles ignore it.
 
 `/etc/omdrop/aggregation` set to `1` or `0` turns on or off accepting the phone's Block Ack session (`owl -A`), which lets it send aggregated frames: a 30 MB upload to an MT7612U took 14 s instead of 47 s. It's on by default only for the MT7612U, as other cards haven't been measured.
 
@@ -182,7 +182,7 @@ while the machine is visible and restores it on `stop`.
 
 - An ad-hoc (IBSS) interface joins AWDL's BSSID to handle ACKs. Some AX211s
   need the Wi-Fi interface itself repurposed for this.
-- The cell is HT20 and tries channels 44, 149 and 6 in that order, skipping any the card may not transmit on, since an iPhone gives AWDL more slots on 5 GHz. Cards that refuse a 5 GHz cell, like the AX201, end up on 6. Beacons every 10 seconds fix discovery after an iPhone restart.
+- The cell is HT20 and tries channels 44, 149 and 6 in that order, skipping any the card may not transmit on, since an iPhone gives AWDL more slots on 5 GHz. Cards that refuse a 5 GHz cell, like the Realtek RTL8822BE, end up on 6. Intel cards go straight to 6, since none has held a 5 GHz cell. Beacons every 10 seconds fix discovery after an iPhone restart.
 - Cards without ad-hoc mode use a hidden AP (hostapd) with the station's MAC instead, on the same channels.
 - OWL injects through a monitor interface, advertises our channel in all
   16 slots (`-S pin`), and elects its sync master by metric (`-E`). Unicast
@@ -216,7 +216,7 @@ is sent a link-local `awdl0` doesn't have and never connects.
 - **UFW blocks the receiver**, so the phone never sees this machine. Run
   `omdrop firewall install` to allow TCP 8771 from link-local addresses on
   `awdl0`.
-- **Exclusive mode is slow on channel 6**, where cards that refuse a 5 GHz cell (like the AX201) end up, since AWDL there gets few of the iPhone's slots: a 2.4 MB photo takes 10–17 s on an AX201.
+- **Exclusive mode is slow on channel 6**, where Intel cards and others that refuse a 5 GHz cell run, since AWDL there gets few of the iPhone's slots: a 2.4 MB photo takes 10–17 s on an AX201.
 - **The MT7921/MT7922 are unreliable.** `mt7921e` sends injected unicast at
   1 Mbit/s whatever rate is asked for, and not at all on 5 GHz, so discovery
   and the handshake often stall. Close and reopen the share sheet to retry.

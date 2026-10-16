@@ -27,11 +27,11 @@ Band 2:
 '''
 
 
-def offered(listing, channels=None):
+def offered(listing, channels=None, driver=''):
     with tempfile.TemporaryDirectory() as conf:
         if channels is not None:
             Path(conf, 'channels').write_text(channels)
-        script = 'iw() { printf "%s" "$LISTING"; }\n' + TX_CHANNELS + '\ntx_channels phy0\n'
+        script = 'iw() { printf "%s" "$LISTING"; }\n' + TX_CHANNELS + f'\ntx_channels phy0 {driver}\n'
         result = subprocess.run(['bash', '-c', script], env=dict(os.environ, LISTING=listing, CONF=conf),
                                 capture_output=True, text=True, timeout=10)
     assert result.returncode == 0, result.stderr
@@ -47,6 +47,12 @@ class ChannelTests(unittest.TestCase):
 
     def test_channels_file_sets_the_order(self):
         self.assertEqual(offered(INTEGER.replace('	  No IR\n', ''), '149 6\n'), ['5745', '2437'])
+
+    def test_iwlwifi_defaults_to_channel_6(self):
+        self.assertEqual(offered(DECIMAL, driver='iwlwifi'), ['2437'])
+
+    def test_channels_file_overrides_the_iwlwifi_default(self):
+        self.assertEqual(offered(DECIMAL, '44 6\n', driver='iwlwifi'), ['5220', '2437'])
 
 
 if __name__ == '__main__':

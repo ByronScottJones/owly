@@ -45,7 +45,7 @@ in
       type = lib.types.listOf (lib.types.enum [ 6 44 149 ]);
       default = [ ];
       example = [ 149 6 ];
-      description = "Order exclusive mode tries AWDL channels in (/etc/omdrop/channels). Default: 44, 149, 6.";
+      description = "Order exclusive mode tries AWDL channels in (/etc/omdrop/channels). Default: 44, 149, 6, or 6 alone for iwlwifi.";
     };
 
     allowUntested = lib.mkEnableOption "cards whose profile is untested (/etc/omdrop/allow-untested)";

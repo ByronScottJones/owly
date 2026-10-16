@@ -194,7 +194,10 @@ iw() {
         return self.run_case(self.PHY_CHANNELS + f'PROF_MODE={mode}\ntx_channels phy0 {driver}').split()
 
     def test_exclusive_tries_5ghz_first(self):
-        self.assertEqual(self.tx_channels('exclusive', 'iwlwifi'), ['5220', '5745', '2437'])
+        self.assertEqual(self.tx_channels('exclusive', 'rtw88_8822be'), ['5220', '5745', '2437'])
+
+    def test_iwlwifi_exclusive_stays_on_channel_6(self):
+        self.assertEqual(self.tx_channels('exclusive', 'iwlwifi'), ['2437'])
 
     def test_active_monitor_stays_on_channel_6(self):
         self.assertEqual(self.tx_channels('active-monitor', 'mt7921e'), ['2437'])

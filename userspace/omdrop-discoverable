@@ -141,6 +141,11 @@ mt76_dir() { echo "/sys/kernel/debug/ieee80211/$(basename "$(readlink -f "/sys/c
 # ad-hoc cell can start there: the AX201 refuses every 5 GHz one (EINVAL on
 # 149 under a GB regdomain, where 44 is "No IR" until it has an AP there), so
 # exclusive_up tries them in this order, or in the one $CONF/channels lists.
+# Intel (iwlwifi) gets channel 6 alone unless $CONF/channels says otherwise:
+# no Intel card has held a 5 GHz cell. Besides the AX201, the AX200 gets
+# EINVAL on 149, the 8260's firmware resets on 44, and an Arrow Lake AX211
+# (8086:7740, self-managed DE) joins 149, but its cell drops and the phone is
+# never heard (#36).
 # An active monitor gets channel 6 alone. The MT7921/MT7922 (mt7921e) sends
 # unicast injected from it at 1 Mbit/s CCK whatever rate OWL asks for, so on
 # 44 none of the MT7922's reached the air (0 of 132, to an independent
@@ -156,7 +161,10 @@ tx_channels() {  # PHY DRIVER
     /^[[:space:]]*\* [0-9.]+ MHz/ { if (f && ok) print f; f = int($2); ok = !/disabled|[Nn]o IR|[Rr]adar/; next }
     /[Nn]o IR|[Rr]adar detection/ { ok = 0 }
     END { if (f && ok) print f }')
-  order=$(cat "$CONF/channels" 2>/dev/null || echo 44 149 6)
+  order=$(cat "$CONF/channels" 2>/dev/null) || case "${2:-}" in
+    iwlwifi) order=6 ;;
+    *) order="44 149 6" ;;
+  esac
   if [ "${PROF_MODE:-}" = active-monitor ]; then
     case "${2:-}" in
       mt76x2u) order="149 44 6" ;;
