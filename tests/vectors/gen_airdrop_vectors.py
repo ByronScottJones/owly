@@ -11,7 +11,6 @@ only changes when this script does.
 """
 
 import base64
-import gzip
 import hashlib
 import json
 import os
@@ -107,6 +106,14 @@ def dvzip(data, store=False):
         else:
             out += struct.pack(">I", len(c)) + c
     return bytes(out)
+
+
+def gzip_member(data):
+    """data as one gzip member: mtime 0, no name, OS 255 (unknown). Built
+    here, not with gzip.compress, whose OS byte depends on the Python version."""
+    c = zlib.compressobj(9, zlib.DEFLATED, -zlib.MAX_WBITS)
+    return (b"\x1f\x8b\x08\x00" + struct.pack("<I", 0) + b"\x02\xff" + c.compress(data) + c.flush()
+            + struct.pack("<II", zlib.crc32(data), len(data) & 0xFFFFFFFF))
 
 
 def noise(n):
@@ -310,7 +317,7 @@ def upload_vectors():
         return http("/Upload", headers, body, chunked=False)
 
     def legacy_upload(files):
-        body = gzip.compress(odc_archive(files, root=False), mtime=0)
+        body = gzip_member(odc_archive(files, root=False))
         headers = LEGACY_HEADERS[:1] + [("Content-Type", "application/x-cpio")] + LEGACY_HEADERS[2:]
         return http("/Upload", headers, body, chunked=True)
 
