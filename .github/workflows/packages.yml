@@ -21,7 +21,9 @@ jobs:
       - uses: actions/checkout@v4
 
       # makepkg won't run as root. omdrop-owl depends on owly, which isn't
-      # in a repository, so the owly just built is installed for it.
+      # in a repository, so the owly just built is installed for it. Their
+      # check()s are left out: the tests are CI's check job's, and each
+      # check() would rebuild the workspace.
       - name: Build owly and omdrop-owl
         run: |
           useradd -m builder
@@ -29,9 +31,9 @@ jobs:
           chown -R builder "$GITHUB_WORKSPACE"
           sudo -u builder git config --global --add safe.directory "$GITHUB_WORKSPACE"
           mkdir -m 777 /tmp/pkgs
-          sudo -u builder OUT=/tmp/pkgs packaging/arch/aur-test.sh owly -s --noconfirm
+          sudo -u builder OUT=/tmp/pkgs packaging/arch/aur-test.sh owly -s --noconfirm --nocheck
           pacman -U --noconfirm /tmp/pkgs/owly-*.pkg.tar.zst
-          sudo -u builder OUT=/tmp/pkgs packaging/arch/aur-test.sh omdrop-owl -s --noconfirm
+          sudo -u builder OUT=/tmp/pkgs packaging/arch/aur-test.sh omdrop-owl -s --noconfirm --nocheck
           pacman -U --noconfirm /tmp/pkgs/omdrop-owl-*.pkg.tar.zst
 
       - name: Check what they installed
