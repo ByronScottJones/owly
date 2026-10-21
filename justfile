@@ -41,7 +41,7 @@ ci: check test
 # Fuzz each network-facing parser (cargo-fuzz, nightly). Never at devices you don't own (SEC-9)
 fuzz seconds="60":
     python3 -I fuzz/seed.py fuzz/corpus
-    for target in $(cargo +nightly fuzz list); do cargo +nightly fuzz run "$target" -- -max_total_time={{seconds}} -rss_limit_mb=2048; done
+    for target in $(cargo +nightly fuzz list); do cargo +nightly fuzz run "$target" -- -max_total_time={{ seconds }} -rss_limit_mb=2048; done
 
 # Each radio mode on simulated radios (mac80211_hwsim), leaving real Wi-Fi alone (root)
 hwsim:
@@ -49,7 +49,7 @@ hwsim:
 
 # Install owlyd, the owly CLI and omdrop-owl's hooks and helper, as the packages do (root)
 install:
-    {{release}}
+    {{ release }}
     sudo BINDIR=/usr/local/bin packaging/install.sh owly
     sudo packaging/install.sh omdrop-owl
     sudo systemctl daemon-reload
@@ -76,22 +76,32 @@ uninstall:
 # Hold the radio until Ctrl-C, installing owlyd first when it's missing or out of date
 [group('phone')]
 radio *args:
-    @{{release}}
+    @{{ release }}
     @cmp -s "${CARGO_TARGET_DIR:-target}/release/owlyd" /usr/lib/owly/owlyd || just install
-    {{owly}} radio up "$@"
+    {{ owly }} radio up "$@"
 
 # Receive files and links into /tmp/owly-receive
 [group('phone')]
 receive *args:
     mkdir -p /tmp/owly-receive
-    RUST_LOG=owly_airdrop=debug {{owly}} receive --dir /tmp/owly-receive "$@"
+    RUST_LOG=owly_airdrop=debug {{ owly }} receive --dir /tmp/owly-receive "$@"
 
 # Send files, a link (`--url <url>`) or, by default, a test photo to the first phone that answers (or `--to <name>`)
 [group('phone')]
 send *args="tests/photo.png":
-    {{owly}} send "$@"
+    {{ owly }} send "$@"
 
 # Any other owly command: `just owly doctor`, `just owly radio peers`, `just owly test-card`
 [group('phone')]
 owly *args:
-    {{owly}} "$@"
+    {{ owly }} "$@"
+
+# Preview README as GitHub renders it (dark by default; `just readme-preview light`)
+readme-preview theme="dark":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    out=.readme-preview.html
+    # Export next to the README so relative image paths keep working.
+    uvx grip --export --quiet --user "$(gh api user --jq .login)" --pass "$(gh auth token)" README.md "$out"
+    sed -i 's|<html lang="en">|<html lang="en" data-color-mode="{{ theme }}" data-{{ theme }}-theme="{{ theme }}">|' "$out"
+    xdg-open "$out"

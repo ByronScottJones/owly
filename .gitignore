@@ -11,3 +11,5 @@ other-libs
 
 # Cargo build output.
 /target/
+
+.readme-preview.html

@@ -2,35 +2,31 @@
 
 https://github.com/user-attachments/assets/b195ce4c-e078-49be-bc13-44a72b6dc189
 
-AirDrop between iPhones, Macs and Linux computers whose Wi-Fi isn't Apple's Broadcom chip. Owly runs AWDL, the Wi-Fi link AirDrop uses, in userspace on an ordinary card, and lends it out through `owlyd`, a small system service.
+AirDrop between iPhones and Linux devices whose Wi-Fi isn't Apple's Broadcom chip.
 
-- **On Omarchy**, it's the radio under [Omdrop](https://github.com/netmojo-systems/omdrop-plugin): install `omdrop-owl`.
-- **Elsewhere**, `owly` sends and receives by itself: `owly send` and `owly receive`.
-
-See [supported hardware](#supported-hardware). `owly doctor` says what your card can do.
+See [supported hardware](#supported-hardware).
 
 ## Install
 
-### On Omarchy, with Omdrop
+### Arch/Omarchy
 
-From the [AUR](https://aur.archlinux.org/packages/omdrop-owl), with [Omdrop](https://github.com/netmojo-systems/omdrop-plugin#install) if it isn't installed yet:
+If using Omarchy, you can install Owly together with [omdrop](https://github.com/netmojo-systems/omdrop-plugin) to get it in your bar:
 
 ```sh
-yay -S omdrop-owl
+# Install Omdrop:
 omarchy plugin add https://github.com/netmojo-systems/omdrop-plugin.git
+
+# Install Owly (omdrop-owl):
+yay -S omdrop-owl
 ```
 
-Then turn Omdrop on from its icon in the bar. `omdrop-owl` is Omdrop's radio backend, and pulls in `owly` for the radio. It works with both of Omdrop's versions, so there's nothing to choose: where omdrop-core, Omdrop's Rust version, is installed, Omdrop runs it on the hooks `omdrop-owl` installs in `/usr/lib/omdrop/radio/`. Otherwise Omdrop's Python version runs the radio helper and sender in `/usr/lib/omdrop/`, as it did with `omdrop-owl` 0.3.0.
-
-Upgrading from `omdrop-owl` 0.3.0 or older replaces OWL with Owly, with the same Omdrop. Settings in `/etc/omdrop/` are carried over to `/etc/owly/radio.toml` unless that file already exists (see [Configuration](#configuration)).
-
-### On Arch, without Omdrop
+If you're just using Arch, or don't want the UI, you can just install the CLI:
 
 ```sh
 yay -S owly
 ```
 
-### On NixOS (flake)
+### NixOS
 
 ```nix
 inputs.owly.url = "github:t4t5/omdrop-owl";
@@ -39,26 +35,28 @@ inputs.owly.url = "github:t4t5/omdrop-owl";
 ```nix
 imports = [ inputs.owly.nixosModules.default ];
 services.owly.enable = true;
-# Optional: /etc/owly/radio.toml (see Configuration)
 services.owly.settings = { allow_untested = true; };
 ```
 
-The module installs `owly` and `owlyd` with its D-Bus and polkit files, keeps NetworkManager off Owly's interfaces and udev from changing `awdl0`'s MAC address, opens TCP 8771 (`owly receive`) on `awdl0`, and stops NixOS restarting wpa_supplicant whenever a session adds or removes an interface. The `services.omdrop-owl` options of 0.3.0 and older still work, with a warning, and carry over to `services.owly`.
+### Debian/Ubuntu
 
-### On Debian, Ubuntu or Fedora
-
-Download the `.deb` or `.rpm` from the newest `owly-v…` release on the [releases page](https://github.com/t4t5/omdrop-owl/releases), then:
+Download the `.deb` from the [releases page](https://github.com/t4t5/omdrop-owl/releases) and run:
 
 ```sh
 sudo apt install ./owly_*_amd64.deb     # Debian 12, Ubuntu 22.04 and newer
+```
+
+### Fedora
+
+Download the `.rpm` from the [releases page](https://github.com/t4t5/omdrop-owl/releases) and run:
+
+```sh
 sudo dnf install ./owly-*.x86_64.rpm    # Fedora 44 and newer
 ```
 
-They're built for x86_64. There's no apt or dnf repository yet: to upgrade, install a newer release's package the same way.
+### From source
 
-### On other distributions, from source
-
-To build it from source you need Rust 1.88 or newer. Then:
+Requires Rust 1.88 or newer:
 
 ```sh
 cargo build --release --locked -p owlyd -p owly-cli
@@ -66,21 +64,9 @@ sudo packaging/install.sh owly
 sudo systemctl daemon-reload && sudo nmcli general reload conf
 ```
 
-`packaging/install.sh` is the install step every package runs too. It honours `DESTDIR` and `PREFIX` for packagers, and `packaging/install.sh --list owly` prints what it installs. At runtime, owlyd uses NetworkManager (`nmcli`), `ip` and `ping`, and `hostapd` on cards without ad-hoc mode.
-
-On Debian, Ubuntu or Fedora on another architecture, `packaging/package.sh deb` or `packaging/package.sh rpm` builds the package from source instead. It also needs `dpkg-dev` or `rpm-build`.
-
-The packages built from [`v0.3.0`](https://github.com/t4t5/omdrop-owl/tree/v0.3.0) for Debian, Fedora and NixOS (`omdrop-owl` 0.3.0) still work with the omdrop plugin's Python version. They aren't developed further.
-
 ## Usage
 
-### With Omdrop
-
-Turn Omdrop on from the bar, or use the `omdrop` CLI (`omdrop on 10m`, `omdrop send <device> <file>`). Omdrop asks Owly for the radio whenever it's visible or sending.
-
-### Without Omdrop
-
-Take the radio, which brings `awdl0` up, and keep it until Ctrl-C:
+Start the radio in your terminal:
 
 ```sh
 owly radio up
@@ -89,46 +75,21 @@ owly radio up
 Then, in another terminal:
 
 ```sh
-owly receive --dir ~/Downloads      # visible as this computer's name, asks before accepting
-owly browse                         # nearby AirDrop receivers
+# To receive files:
+owly receive --dir ~/Downloads
+
+# To send files:
+owly browse    # (find nearby AirDrop receivers)
 owly send --to "Jane's iPhone" photo.jpg
-owly send --url https://example.com
 ```
 
-`owly receive` listens on TCP 8771 on `awdl0`, which the firewall has to allow. With UFW: `sudo ufw allow in on awdl0 to any port 8771 proto tcp`.
-
-A phone set to "Contacts Only" doesn't see `owly receive`: set it to "Everyone for 10 Minutes". Omdrop, with your Apple identity, can do Contacts Only.
-
-### Checking the card
-
-```sh
-owly doctor
-```
-
-says which mode the card runs in, what's in the way (an AP on the wrong channel, a missing `hostapd`), and what's known to go wrong on it. `owly radio up` gives the radio back on Ctrl-C. In exclusive mode Wi-Fi is down while the radio is up.
-
-## Configuration
-
-`/etc/owly/radio.toml`, all optional:
-
-```toml
-station = "wlan0"        # the Wi-Fi interface to use; else the first station
-allow_untested = false   # run on a card the quirks table doesn't mark tested
-reconnect_after = true   # overrides the driver's reconnect_after_monitor
-country = "DE"           # exclusive modes: the regulatory domain to ask for
-channels = [6]           # exclusive modes: overrides the driver's channel order
-aggregation = true       # overrides the driver's rx_ampdu: accept the phone's Block Ack session
-tx_rate = "mcs7"         # the data frame rate
-hostapd = "/usr/sbin/hostapd" # for a hidden AP, on cards with no ad-hoc mode; else found on PATH
-tx_amsdu = true          # send unicast as A-MSDUs where the peer takes them
-```
-
-What Owly does on each Wi-Fi driver comes from [`crates/owly-radio/drivers.toml`](crates/owly-radio/drivers.toml). `/etc/owly/drivers.toml`, in the same format, is read over it, so you can try settings for a new card without rebuilding.
+Make sure you set your phone's Airdrop setting to "Everyone for 10 minutes".
 
 ## Supported hardware
 
-**Status:** ✅ both directions work, ⚠️ both have worked but not reliably ([known issues](#known-issues)), ❌ tried and fails, ❓ untested\
-**Modes:** *Shared* keeps Wi-Fi connected; *Exclusive* and *Active monitor* turn it off while the radio is up ([why](#modes))
+**Status:** ✅ both directions work, ⚠️ unreliable (see [known issues](#known-issues)), ❌ fails, ❓ untested
+
+**Modes:** *Shared* keeps Wi-Fi connected; *Exclusive* and *Active monitor* turn it off while the radio is up (see [why?](#modes))
 
 <!-- hardware-table:start -->
 <!-- Generated by `cargo xtask hardware` from hardware/ and crates/owly-radio/drivers.toml: edit those, not this table. -->
@@ -163,13 +124,22 @@ What Owly does on each Wi-Fi driver comes from [`crates/owly-radio/drivers.toml`
 
 One card name can cover chips that behave differently, so a report from a machine, PCI ID (`lspci -nn`) or kernel not listed here helps too.
 
-### Testing your card
+### Checking your card
+
+```sh
+owly doctor
+```
+
+This says which mode the card runs in, what's in the way (an AP on the wrong channel, a missing `hostapd`), and what's known to go wrong on it.
+
+
+### Adding your card
 
 ```sh
 owly test-card
 ```
 
-walks you through a photo each way with an iPhone (through Omdrop where it's installed, otherwise `owly send` and `owly receive`), watches Wi-Fi for five minutes after the radio is given back, and writes a JSON report. The report holds no router MAC. Open a pull request adding it to [`hardware/reports/`](hardware/README.md), or attach it to an issue.
+This walks you through a photo each way with an iPhone, watches Wi-Fi for five minutes, and writes a JSON report. Open a pull request adding it to [`hardware/reports/`](hardware/README.md), or attach it to an issue.
 
 A card with no entry in `drivers.toml` gets the `*` entry, which runs only with `allow_untested = true`. Cards that can inject frames from a monitor interface while connected to Wi-Fi are the likely candidates for shared mode. Most mac80211 drivers can, but how they behave around it varies, which is what `drivers.toml` records. To try other settings, copy the `*` entry to `/etc/owly/drivers.toml` under your driver's name (`basename $(readlink /sys/class/net/<wifi>/device/driver)`) and change it there.
 
@@ -183,6 +153,25 @@ A card with no entry in `drivers.toml` gets the `*` entry, which runs only with 
 
 A USB adapter can run exclusive mode as a second card while the built-in one stays connected: set `station` to the adapter in `/etc/owly/radio.toml` and disconnect it (`nmcli device disconnect <adapter>`).
 
+## Configuration
+
+`/etc/owly/radio.toml`, all optional:
+
+```toml
+station = "wlan0"        # the Wi-Fi interface to use; else the first station
+allow_untested = false   # run on a card the quirks table doesn't mark tested
+reconnect_after = true   # overrides the driver's reconnect_after_monitor
+country = "DE"           # exclusive modes: the regulatory domain to ask for
+channels = [6]           # exclusive modes: overrides the driver's channel order
+aggregation = true       # overrides the driver's rx_ampdu: accept the phone's Block Ack session
+tx_rate = "mcs7"         # the data frame rate
+hostapd = "/usr/sbin/hostapd" # for a hidden AP, on cards with no ad-hoc mode; else found on PATH
+tx_amsdu = true          # send unicast as A-MSDUs where the peer takes them
+```
+
+What Owly does on each Wi-Fi driver comes from [`crates/owly-radio/drivers.toml`](crates/owly-radio/drivers.toml). `/etc/owly/drivers.toml`, in the same format, is read over it, so you can try settings for a new card without rebuilding.
+
+
 ## Known issues
 
 `owly doctor` lists what's known to go wrong on your card. Beyond that:
@@ -193,28 +182,15 @@ A USB adapter can run exclusive mode as a second card while the built-in one sta
 
 ## How it works
 
-`owlyd` is a system service, started by D-Bus on the first call, that owns the Wi-Fi radio. It sets the card up for the mode `drivers.toml` and the probe choose, runs AWDL on it, and lends the resulting `awdl0` out as a lease over D-Bus (`io.github.t4t5.Owly.Radio1`), which polkit lets the user at the seat take. When the lease ends, or the client holding it exits or crashes, owlyd gives Wi-Fi back, and a journal lets it do the same after a crash of its own. It holds `CAP_NET_ADMIN` and `CAP_NET_RAW` only and parses nothing above AWDL. AirDrop itself (Omdrop's receiver, or `owly receive`) runs as the user, over ordinary IPv6 sockets on `awdl0`.
+AirDrop runs over AWDL, a Wi-Fi link Apple devices use to talk to each other directly. Owly comes in two halves:
 
-AWDL comes from `owly-awdl`, Owly's own implementation. It replaces [jedbillyb's OWL fork](https://github.com/jedbillyb/owl) and the [patches](https://github.com/t4t5/omdrop-owl/tree/v0.3.0/patches) `omdrop-owl` 0.3.0 and older carried, and does what they were made to do.
+- **`owlyd`**, a small system service, takes over your Wi-Fi card, runs AWDL on it, and hands the resulting `awdl0` network interface to the app that asked for it. When the app is done, or crashes, owlyd gives your Wi-Fi back.
+- **AirDrop itself** (`owly receive` or Omdrop) runs as your user, not as root, and talks over `awdl0` like any other network.
 
-The protocol layers are Rust crates other projects can build on: `owly-awdl` (sans-IO, `no_std` AWDL), `owly-airdrop` (AirDrop, with a sans-IO core), both with a driver on tokio behind a feature, and `owly-radio` (the radio on Linux, behind its backend trait). [docs/SPEC.md](docs/SPEC.md) says what they implement on the wire.
-
-A new kind of radio plugs in at one of two places. One that only has to carry 802.11 frames, such as an ESP32 over USB, implements the `Air` trait of `owly-awdl`'s driver (its `driver` feature) and gets AWDL from it. One that comes up some other way, or does AWDL itself, implements `owly-radio`'s `Backend` trait, which owlyd serves.
+The pieces are Rust crates you can use in other projects: `owly-awdl` (AWDL), `owly-airdrop` (AirDrop) and `owly-radio` (the Wi-Fi card on Linux). [docs/SPEC.md](docs/SPEC.md) describes the protocol they implement. To add a new kind of radio, such as an ESP32 over USB, implement `owly-awdl`'s `Air` trait if it only sends and receives Wi-Fi frames, or `owly-radio`'s `Backend` trait if it runs AWDL itself.
 
 ## Development
-
-```sh
-just check     # formatting and lints, before each commit
-just test      # tests
-just ci        # everything CI checks: lints, tests, portability, spec coverage, vectors, the hardware table
-just hwsim     # each radio mode on mac80211_hwsim (root)
-just           # everything else
-```
 
 To try it with a phone, run `just radio` in one terminal (it installs owlyd first when it's missing or out of date), then `just receive` or `just send` in another. With no arguments, `just send` sends a test photo, `tests/photo.png`.
 
 The AirDrop tests run sender and receiver in a user network namespace (`unshare -rn`), so they need no root, but do need unprivileged user namespaces. `just install` installs a development build the way the packages lay it out, and `just uninstall` removes it. `packaging/arch/*/PKGBUILD` build packages from the checkout (`makepkg -si` there), and `packaging/package.sh deb` or `rpm` builds owly's `.deb` or `.rpm`.
-
-## License
-
-Owly is MIT. The `omdrop-owl` package also carries [omdrop-awdl's tools](crates/omdrop-owl/omdrop-awdl/README.md), unmodified, which are GPL-2.0-only.
