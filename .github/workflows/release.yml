@@ -1,13 +1,13 @@
-# Releases each AUR package whose version on main is new: owly when the
-# workspace version in Cargo.toml (and packaging/arch/owly's pkgver) moves,
-# omdrop-owl when crates/omdrop-owl's does, and omdrop-owl-bin with it.
-# owly goes first, since omdrop-owl depends on it, and omdrop-owl-bin last,
-# since its prebuilt tarball goes on omdrop-owl's GitHub release. Then
-# owly's GitHub release gets its .deb and .rpm. After a failure, rerun it,
-# or run it from the Actions tab.
+# Releases each AUR package whose version on main is new, which for all
+# three is the workspace version in Cargo.toml (and their PKGBUILDs'
+# pkgver): one v<version> tag and GitHub release for them all. owly goes
+# first and makes the release, since omdrop-owl depends on it, and
+# omdrop-owl-bin last, since it adds its prebuilt tarball to the release.
+# Then the release gets owly's .deb and .rpm. After a failure, rerun it, or
+# run it from the Actions tab.
 #
 # Needs the secret AUR_SSH_KEY: a private key whose public half is on the AUR
-# account that maintains both packages.
+# account that maintains the three packages.
 name: Release
 
 on:
@@ -27,7 +27,6 @@ jobs:
     uses: ./.github/workflows/aur-release.yml
     with:
       package: owly
-      tag-prefix: owly-v
     secrets: inherit
 
   omdrop-owl:
@@ -35,7 +34,6 @@ jobs:
     uses: ./.github/workflows/aur-release.yml
     with:
       package: omdrop-owl
-      tag-prefix: v
     secrets: inherit
 
   omdrop-owl-bin:
@@ -43,10 +41,9 @@ jobs:
     uses: ./.github/workflows/aur-release.yml
     with:
       package: omdrop-owl-bin
-      tag-prefix: v
     secrets: inherit
 
-  # owly's .deb and .rpm, for its GitHub release (the owly job tags it):
+  # owly's .deb and .rpm, for the GitHub release (the owly job tags it):
   # built from the tag when the release doesn't have them yet, so a rerun
   # after a failure adds what's missing, and a later run nothing.
   owly-assets:
@@ -66,7 +63,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          tag=owly-v$(sed -n 's/^pkgver=//p' packaging/arch/owly/PKGBUILD)
+          tag=v$(sed -n 's/^pkgver=//p' packaging/arch/owly/PKGBUILD)
           assets=$(gh release view "$tag" --json assets --jq '.assets[].name')
           missing=
           grep -q '^owly_.*\.deb$' <<< "$assets" || missing="$missing deb"

@@ -1,6 +1,6 @@
 # owly's .deb and .rpm (packaging/package.sh), as the artifacts deb and
 # rpm: for packages.yml, which installs them on each distribution release
-# they're for, and release.yml, which puts them on owly's GitHub release.
+# they're for, and release.yml, which puts them on the GitHub release.
 name: Linux packages
 
 on:

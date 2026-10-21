@@ -7,7 +7,7 @@
 #
 # tar builds owly and omdrop-owl together instead, for the AUR's
 # omdrop-owl-bin: both packages' files, staged the same way, in a tarball
-# for omdrop-owl's GitHub release (.github/workflows/aur-release.yml).
+# for the GitHub release (.github/workflows/aur-release.yml).
 #
 #   packaging/package.sh deb|rpm|tar
 #
@@ -29,9 +29,8 @@ OUT=${OUT:-$PWD}
 TARGET=${CARGO_TARGET_DIR:-$ROOT/target}
 
 if [ "$FORMAT" = tar ]; then
-  # omdrop-owl's version, since the tarball is for its release.
-  VERSION=$(sed -n 's/^version = "\(.*\)"$/\1/p' "$ROOT/crates/omdrop-owl/Cargo.toml")
-  [ -n "$VERSION" ] || { echo "packaging/package.sh: no version in crates/omdrop-owl/Cargo.toml" >&2; exit 1; }
+  VERSION=$(sed -n '/^\[workspace\.package\]/,/^\[/s/^version = "\(.*\)"$/\1/p' "$ROOT/Cargo.toml")
+  [ -n "$VERSION" ] || { echo "packaging/package.sh: no workspace version in Cargo.toml" >&2; exit 1; }
   NAME=omdrop-owl-$VERSION-$(uname -m)
 
   (cd "$ROOT" && cargo build --release --locked -p owlyd -p owly-cli -p omdrop-owl)

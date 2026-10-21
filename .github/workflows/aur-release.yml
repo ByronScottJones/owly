@@ -1,17 +1,15 @@
 # One package's release, for release.yml: build the AUR's PKGBUILD
-# (packaging/arch/aur.sh), tag <tag-prefix><pkgver> with a GitHub release
-# (if that tag is new: a pkgrel bump reuses it), and publish it to the AUR.
-# A version the AUR already has does nothing. omdrop-owl-bin goes on
-# omdrop-owl's release instead, adding the prebuilt tarball it installs.
+# (packaging/arch/aur.sh), tag v<pkgver> with a GitHub release (if that tag
+# is new: the first package of a version makes it, and a pkgrel bump reuses
+# it), and publish it to the AUR. A version the AUR already has does
+# nothing. omdrop-owl-bin adds the prebuilt tarball it installs to the
+# release.
 name: AUR release
 
 on:
   workflow_call:
     inputs:
       package:
-        type: string
-        required: true
-      tag-prefix:
         type: string
         required: true
 
@@ -23,7 +21,6 @@ jobs:
     container: archlinux:base-devel
     env:
       PKG: ${{ inputs.package }}
-      PREFIX: ${{ inputs.tag-prefix }}
     steps:
       - name: Install tools
         run: pacman -Syu --noconfirm --needed git github-cli jq openssh pacman-contrib
@@ -39,7 +36,7 @@ jobs:
           pkgbuild=packaging/arch/$PKG/PKGBUILD
           pkgver=$(sed -n 's/^pkgver=//p' "$pkgbuild")
           version=$pkgver-$(sed -n 's/^pkgrel=//p' "$pkgbuild")
-          tag=$PREFIX$pkgver
+          tag=v$pkgver
           aur=$(curl -fsS "https://aur.archlinux.org/rpc/v5/info/$PKG" \
             | jq -r '.results[0].Version // "none"')
           echo "PKGBUILD: $version, AUR: $aur"
@@ -64,7 +61,7 @@ jobs:
               exit 1
             fi
           elif [ "$PKG" = omdrop-owl-bin ]; then
-            echo "::error::omdrop-owl has no release $tag for omdrop-owl-bin to go on."
+            echo "::error::There's no release $tag for omdrop-owl-bin's tarball to go on."
             exit 1
           else
             tagged=false
@@ -99,7 +96,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
           TAG: ${{ steps.version.outputs.tag }}
           PKGVER: ${{ steps.version.outputs.pkgver }}
-        run: gh release create "$TAG" --target "$GITHUB_SHA" --title "$PKG $PKGVER" --generate-notes
+        run: gh release create "$TAG" --target "$GITHUB_SHA" --title "$PKGVER" --generate-notes
 
       # The tarball the package was just built and tested with. A rerun
       # leaves the one already there, which the AUR's checksum is of.

@@ -1,9 +1,8 @@
 [package]
 name = "omdrop-owl"
 description = "Omdrop's radio backend on Owly's radio: omdrop-core's hooks, and omdrop-awdl's helper for Omdrop without omdrop-core. Shipped in the omdrop-owl package."
-# omdrop-owl's version, which the probe reports: the package continues
-# legacy's numbering, so it upgrades in place, and its `v<version>` tags.
-version = "0.4.0"
+# The workspace's, which the probe reports.
+version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

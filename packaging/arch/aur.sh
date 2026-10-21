@@ -1,9 +1,9 @@
 #!/bin/bash
 # Write the AUR's PKGBUILD for PKG (owly, omdrop-owl or omdrop-owl-bin), and
 # the install file it names, into DIR. For owly and omdrop-owl, it's
-# packaging/arch/PKG/PKGBUILD changed to build the release tagged TAG
-# (owly-v<pkgver>, or v<pkgver> for omdrop-owl) instead of this checkout.
-# omdrop-owl-bin's is the AUR's already, and is checked instead. The
+# packaging/arch/PKG/PKGBUILD changed to build the release tagged
+# v<pkgver> instead of this checkout. omdrop-owl-bin's is the AUR's
+# already, and is checked instead. The
 # tarball's checksum is left SKIP, for updpkgsums to fill in once the tag
 # exists (aur-publish.sh).
 #
@@ -14,8 +14,7 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 PKG=${1:?usage: packaging/arch/aur.sh owly|omdrop-owl|omdrop-owl-bin DIR}
 OUT=${2:?usage: packaging/arch/aur.sh owly|omdrop-owl|omdrop-owl-bin DIR}
 case "$PKG" in
-  owly) TAG='owly-v${pkgver}' ;;
-  omdrop-owl) TAG='v${pkgver}' ;;
+  owly | omdrop-owl) TAG='v${pkgver}' ;;
   omdrop-owl-bin) ;;
   *) echo "packaging/arch/aur.sh: no package $PKG" >&2; exit 2 ;;
 esac
@@ -24,7 +23,7 @@ VERSION=$(sed -n 's/^pkgver=//p' "$SRC")
 mkdir -p "$OUT"
 
 # omdrop-owl-bin has owly's and omdrop-owl's files (packaging/package.sh tar),
-# so it has to stay their sum: omdrop-owl's version, both packages' depends,
+# so it has to stay their sum: their version, both packages' depends,
 # the optdepends those don't cover, both licenses, and the functions its
 # install file takes from theirs unchanged.
 if [ "$PKG" = omdrop-owl-bin ]; then
@@ -32,7 +31,7 @@ if [ "$PKG" = omdrop-owl-bin ]; then
   _array() { ( source "$HERE/$1/PKGBUILD" && declare -n a="$2" && printf '%s\n' "${a[@]}" ) | sed '/^$/d' | sort -u; }
   _want() {
     case "$1" in
-      pkgver) _array omdrop-owl pkgver ;;
+      pkgver) { _array owly pkgver; _array omdrop-owl pkgver; } ;;
       depends) { _array owly depends; _array omdrop-owl depends; } | grep -vx owly ;;
       optdepends)
         { _array owly optdepends; _array omdrop-owl optdepends; } | while IFS= read -r o; do

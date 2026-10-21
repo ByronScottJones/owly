@@ -7,11 +7,11 @@
 # Build this checkout:  makepkg -si  (here, in packaging/arch/owly)
 #
 # packaging/arch/aur.sh derives the AUR's PKGBUILD from this one, building
-# the release tagged owly-v${pkgver} instead of this checkout. Bumping the
-# workspace version in Cargo.toml, and pkgver with it, publishes it
-# (.github/workflows/release.yml).
+# the release tagged v${pkgver} instead of this checkout. Bumping the
+# workspace version in Cargo.toml, and pkgver here, in omdrop-owl's and in
+# omdrop-owl-bin's with it, publishes it (.github/workflows/release.yml).
 pkgname=owly
-pkgver=0.1.0
+pkgver=0.4.0
 pkgrel=1
 pkgdesc="AirDrop's Wi-Fi radio on Linux: AWDL in userspace, the owlyd radio service, and the owly CLI"
 arch=('x86_64' 'aarch64')
