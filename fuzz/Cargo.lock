@@ -213,14 +213,14 @@ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
 name = "owly-airdrop"
-version = "0.1.0"
+version = "0.4.0"
 dependencies = [
  "flate2",
 ]
 
 [[package]]
 name = "owly-awdl"
-version = "0.1.0"
+version = "0.4.0"
 dependencies = [
  "tokio",
  "tracing",
@@ -238,7 +238,7 @@ dependencies = [
 
 [[package]]
 name = "owly-radio"
-version = "0.1.0"
+version = "0.4.0"
 dependencies = [
  "nix",
  "owly-awdl",

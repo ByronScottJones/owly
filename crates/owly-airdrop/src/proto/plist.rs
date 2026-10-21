@@ -336,8 +336,10 @@ impl<'a> Reader<'a> {
                 // A UTF-16 unit becomes at most 3 bytes of UTF-8.
                 self.produce(units.saturating_mul(3))?;
                 let units = raw
-                    .chunks_exact(2)
-                    .map(|c| u16::from_be_bytes([c[0], c[1]]));
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|&c| u16::from_be_bytes(c));
                 char::decode_utf16(units)
                     .collect::<Result<String, _>>()
                     .map(Value::String)

@@ -41,7 +41,9 @@ ci: check test
 # Fuzz each network-facing parser (cargo-fuzz, nightly). Never at devices you don't own (SEC-9)
 fuzz seconds="60":
     python3 -I fuzz/seed.py fuzz/corpus
-    for target in $(cargo +nightly fuzz list); do cargo +nightly fuzz run "$target" -- -max_total_time={{ seconds }} -rss_limit_mb=2048; done
+    # cargo-fuzz builds for the triple it was itself built for, so the musl
+    # build cargo-binstall fetches would build for musl, which ASan can't link
+    host=$(rustc +nightly -vV | sed -n 's/^host: //p'); for target in $(cargo +nightly fuzz list); do cargo +nightly fuzz run --target "$host" "$target" -- -max_total_time={{ seconds }} -rss_limit_mb=2048; done
 
 # Each radio mode on simulated radios (mac80211_hwsim), leaving real Wi-Fi alone (root)
 hwsim:
