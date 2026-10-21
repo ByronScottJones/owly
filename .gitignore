@@ -1,19 +1,15 @@
-# Fetched at a pinned commit by tools/stage.sh; never committed (GPL-2.0-only).
-/upstream/
-# The assembled runtime directory.
-/build/
-# makepkg: its git clones (SRCDEST defaults to here), work trees and packages.
-/owl/
-/googletest/
-/radiotap/
-/omdrop-awdl/
-/src/
-/pkg/
+# packaging/package.sh and packaging/arch/aur-test.sh, run from here.
 /*.pkg.tar.*
 /*.deb
-__pycache__
 /*.rpm
+# packaging/package.sh tar, for omdrop-owl-bin.
+/omdrop-owl-*.tar.gz
+__pycache__
 
-owl-test-*
-# just readme-preview output
-/.readme-preview.html
+/owly-test-*
+other-libs
+
+# Cargo build output.
+/target/
+
+.readme-preview.html
