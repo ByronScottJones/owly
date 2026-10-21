@@ -18,7 +18,7 @@ on:
 jobs:
   release:
     # Not in forks, which have no AUR key.
-    if: github.repository == 't4t5/omdrop-owl'
+    if: github.repository == 't4t5/owly'
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     env:

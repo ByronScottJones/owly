@@ -457,7 +457,7 @@ fn mode_name(mode: &str) -> &str {
 
 /// ` ([#44](…))` for each issue URL the entry's issues cite.
 fn issue_links(issues: &[String]) -> String {
-    const PREFIX: &str = "https://github.com/t4t5/omdrop-owl/issues/";
+    const PREFIX: &str = "https://github.com/t4t5/owly/issues/";
     let mut links = Vec::new();
     for issue in issues {
         let mut rest = issue.as_str();
@@ -541,12 +541,12 @@ mode = "exclusive"
 [drivers.mt7921e]
 status = "untested"
 mode = "active-monitor"
-issues = ["Slow (https://github.com/t4t5/omdrop-owl/issues/14)."]
+issues = ["Slow (https://github.com/t4t5/owly/issues/14)."]
 
 [devices."8086:095a"]
 status = "broken"
 mode = "exclusive"
-issues = ["Asserts (https://github.com/t4t5/omdrop-owl/issues/16)."]
+issues = ["Asserts (https://github.com/t4t5/owly/issues/16)."]
 
 [drivers."*"]
 status = "untested"
@@ -571,7 +571,7 @@ status = "⚠️ Exclusive, opt-in"
 name = "Intel Dual Band Wireless-AC 7265"
 driver = "iwlwifi"
 ids = ["8086:095a"]
-status = "❌ Exclusive: asserts ([#16](https://github.com/t4t5/omdrop-owl/issues/16))"
+status = "❌ Exclusive: asserts ([#16](https://github.com/t4t5/owly/issues/16))"
 tested_on = ["Zenbook, `8086:095a`, Omarchy (kernel 7.2.5)"]
 
 [[card]]
@@ -657,7 +657,7 @@ ids = ["17cb:1103"]
             [
                 "| Intel AX211 | `iwlwifi` | ✅ Exclusive | XPS 9320, `8086:51f0`, Arch (kernel 7.2.3) |",
                 "| MediaTek MT7921 | `mt7921e` | ⚠️ Exclusive, opt-in | — |",
-                "| Intel Dual Band Wireless-AC 7265 | `iwlwifi` | ❌ Exclusive: asserts ([#16](https://github.com/t4t5/omdrop-owl/issues/16)) | Zenbook, `8086:095a`, Omarchy (kernel 7.2.5) |",
+                "| Intel Dual Band Wireless-AC 7265 | `iwlwifi` | ❌ Exclusive: asserts ([#16](https://github.com/t4t5/owly/issues/16)) | Zenbook, `8086:095a`, Omarchy (kernel 7.2.5) |",
                 "| Qualcomm WCN6855 | `ath11k_pci` | ❓ Shared (opt-in), untested | — |",
                 "| Intel AX210 | `iwlwifi` | ❓ Exclusive untested | — |",
             ]
@@ -699,13 +699,13 @@ ids = ["17cb:1103"]
         let mut r = report("14c3:7961", "mt7921e", 1, &[("phone -> computer", "pass")]);
         r.mode = Some("active-monitor".into());
         let t = render(vec![r]).unwrap();
-        assert!(t.contains("| MediaTek MT7921 | `mt7921e` | ⚠️ Active monitor (opt-in) ([#14](https://github.com/t4t5/omdrop-owl/issues/14)) |"), "{t}");
+        assert!(t.contains("| MediaTek MT7921 | `mt7921e` | ⚠️ Active monitor (opt-in) ([#14](https://github.com/t4t5/owly/issues/14)) |"), "{t}");
     }
 
     #[test]
     fn broken_stays_red_with_a_report() {
         let t = render(vec![report("8086:095a", "iwlwifi", 1, PASS)]).unwrap();
-        assert!(t.contains("| ❌ Exclusive ([#16](https://github.com/t4t5/omdrop-owl/issues/16)) | • Zenbook, `8086:095a`, Omarchy (kernel 7.2.5)<br>• Dell XPS 13, `8086:095a`"), "{t}");
+        assert!(t.contains("| ❌ Exclusive ([#16](https://github.com/t4t5/owly/issues/16)) | • Zenbook, `8086:095a`, Omarchy (kernel 7.2.5)<br>• Dell XPS 13, `8086:095a`"), "{t}");
     }
 
     #[test]

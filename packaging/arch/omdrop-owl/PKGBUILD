@@ -22,7 +22,7 @@ pkgver=0.4.0
 pkgrel=1
 pkgdesc="AirDrop radio backend for Omdrop on non-Broadcom Wi-Fi, on Owly"
 arch=('x86_64' 'aarch64')
-url="https://github.com/t4t5/omdrop-owl"
+url="https://github.com/t4t5/owly"
 # omdrop-awdl's tools are GPL-2.0-only.
 license=('MIT' 'GPL-2.0-only')
 # After owly, what omdrop-awdl's tools need.

@@ -15,7 +15,7 @@
 -->
 <policyconfig>
   <vendor>Owly</vendor>
-  <vendor_url>https://github.com/t4t5/omdrop-owl</vendor_url>
+  <vendor_url>https://github.com/t4t5/owly</vendor_url>
 
   <action id="io.github.t4t5.Owly.acquire">
     <description>Use the Wi-Fi radio for AirDrop</description>

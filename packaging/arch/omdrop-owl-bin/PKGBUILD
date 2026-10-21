@@ -10,13 +10,13 @@
 # which packaging/arch/aur-publish.sh fills in. packaging/arch/aur.sh only
 # checks that it's still owly's and omdrop-owl's together, at omdrop-owl's
 # version, so bump pkgver with omdrop-owl's. Change it in
-# packaging/arch/omdrop-owl-bin in https://github.com/t4t5/omdrop-owl.
+# packaging/arch/omdrop-owl-bin in https://github.com/t4t5/owly.
 pkgname=omdrop-owl-bin
 pkgver=0.4.0
 pkgrel=1
 pkgdesc="AirDrop radio backend for Omdrop on non-Broadcom Wi-Fi, on Owly (prebuilt)"
 arch=('x86_64')
-url="https://github.com/t4t5/omdrop-owl"
+url="https://github.com/t4t5/owly"
 # omdrop-awdl's tools are GPL-2.0-only.
 license=('MIT' 'GPL-2.0-only')
 # owly's, then what omdrop-awdl's tools need: packaging/arch/owly and

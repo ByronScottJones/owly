@@ -101,7 +101,7 @@ Recommends: hostapd
 Suggests: bluez
 Section: net
 Priority: optional
-Homepage: https://github.com/t4t5/omdrop-owl
+Homepage: https://github.com/t4t5/owly
 Description: AirDrop's Wi-Fi radio on Linux
  AWDL in userspace, for Wi-Fi cards without Apple's Broadcom firmware:
  owlyd, the system service that leases the radio out over D-Bus, and the

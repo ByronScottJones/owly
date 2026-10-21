@@ -7,7 +7,7 @@ Version: %{owly_version}
 Release: %{owly_release}
 Summary: AirDrop's Wi-Fi radio on Linux
 License: MIT
-URL: https://github.com/t4t5/omdrop-owl
+URL: https://github.com/t4t5/owly
 # The AUR's depends, by Fedora's names: see packaging/arch/owly/PKGBUILD for
 # what each is for. rpmbuild adds the libraries the binaries link.
 Requires: dbus systemd polkit NetworkManager iproute iputils util-linux-core

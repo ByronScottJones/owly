@@ -8,7 +8,8 @@ See [supported hardware](#supported-hardware).
 
 ## Install
 
-### Arch/Omarchy
+<details>
+<summary>Arch/Omarchy</summary>
 
 If using Omarchy, you can install Owly together with [omdrop](https://github.com/netmojo-systems/omdrop-plugin) to get it in your bar:
 
@@ -26,10 +27,13 @@ If you're just using Arch, or don't want the UI, you can just install the CLI:
 yay -S owly
 ```
 
-### NixOS
+</details>
+
+<details>
+<summary>NixOS</summary>
 
 ```nix
-inputs.owly.url = "github:t4t5/omdrop-owl";
+inputs.owly.url = "github:t4t5/owly";
 ```
 
 ```nix
@@ -38,23 +42,32 @@ services.owly.enable = true;
 services.owly.settings = { allow_untested = true; };
 ```
 
-### Debian/Ubuntu
+</details>
 
-Download the `.deb` from the [releases page](https://github.com/t4t5/omdrop-owl/releases) and run:
+<details>
+<summary>Debian/Ubuntu</summary>
+
+Download the `.deb` from the [releases page](https://github.com/t4t5/owly/releases) and run:
 
 ```sh
 sudo apt install ./owly_*_amd64.deb     # Debian 12, Ubuntu 22.04 and newer
 ```
 
-### Fedora
+</details>
 
-Download the `.rpm` from the [releases page](https://github.com/t4t5/omdrop-owl/releases) and run:
+<details>
+<summary>Fedora</summary>
+
+Download the `.rpm` from the [releases page](https://github.com/t4t5/owly/releases) and run:
 
 ```sh
 sudo dnf install ./owly-*.x86_64.rpm    # Fedora 44 and newer
 ```
 
-### From source
+</details>
+
+<details>
+<summary>From source</summary>
 
 Requires Rust 1.88 or newer:
 
@@ -63,6 +76,8 @@ cargo build --release --locked -p owlyd -p owly-cli
 sudo packaging/install.sh owly
 sudo systemctl daemon-reload && sudo nmcli general reload conf
 ```
+
+</details>
 
 ## Usage
 
@@ -109,13 +124,13 @@ Make sure you set your phone's Airdrop setting to "Everyone for 10 minutes".
 | Intel AX211 | `iwlwifi` | ✅ Exclusive | • ThinkPad X1, `8086:51f1`, Ubuntu 26.04 (kernel 7.0)<br>• XPS 9320, `8086:51f0`, Arch (kernel 7.2.3)<br>• Legion Pro 7 16IRX8H, `8086:7a70`, Omarchy 4.0.4 (kernel 7.2.3)<br>• TUXEDO InfinityBook Max 15 Gen10 (Arrow Lake), `8086:7740`, Kubuntu 26.04.1 (kernel 7.0) |
 | Intel BE (Panther Lake) | `iwlwifi` | ✅ Exclusive | XPS 16, `8086:e440`, Arch (kernel 7.2) |
 | Intel BE200 | `iwlwifi` | ✅ Exclusive | GEEKOM IT13 Max, `8086:272b`, Omarchy 4.0.4 (kernel 7.2.5) |
-| MediaTek MT7921 | `mt7921e` | ⚠️ Exclusive, opt-in; shared fails ([#14](https://github.com/t4t5/omdrop-owl/issues/14)) | `14c3:7961`, CachyOS (kernel 7.2.9) |
-| MediaTek MT7922 (RZ616) | `mt7921e` | ⚠️ Exclusive, opt-in; shared fails ([#14](https://github.com/t4t5/omdrop-owl/issues/14)) | Minisforum MS-A2, `14c3:0616`, NixOS 26.05 (kernels 6.18 and 7.2.5) |
-| MediaTek MT7927 | `mt7925e` | ❌ Shared: never heard; active monitor (opt-in) sends, but receiving times out ([#44](https://github.com/t4t5/omdrop-owl/issues/44)) | TP-Link Archer TBE550E, `14c3:7927`, CachyOS (kernel 7.2.9) |
-| Realtek RTL8821CE | `rtw88_8821ce` | ❌ Shared: OWL syncs but no transfer, Wi-Fi often lost after ([#60](https://github.com/t4t5/omdrop-owl/issues/60)); exclusive receives nothing | HP laptop, `10ec:c821`, Omarchy (kernel 7.2.5) |
-| Qualcomm WCN6855 (QCNFA765) | `ath11k_pci` | ❌ Can't create the monitor interface both modes need ([#45](https://github.com/t4t5/omdrop-owl/issues/45)) | ThinkPad, `17cb:1103`, CachyOS (kernel 7.2.9) |
-| Qualcomm WCN7850 (FastConnect 7800) | `ath12k_wifi7_pci` | ❌ Shared: receives nothing from the phone ([#40](https://github.com/t4t5/omdrop-owl/issues/40)); exclusive untested | `17cb:1107`, Fedora 44 (kernel 7.2.9) |
-| Intel Dual Band Wireless-AC 7265 | `iwlwifi` | ❌ Exclusive: firmware asserts on every ad-hoc start ([#16](https://github.com/t4t5/omdrop-owl/issues/16)) | Zenbook UX305CA, `8086:095a`, Omarchy 4.0.4 (kernel 7.2.5) |
+| MediaTek MT7921 | `mt7921e` | ⚠️ Exclusive, opt-in; shared fails ([#14](https://github.com/t4t5/owly/issues/14)) | `14c3:7961`, CachyOS (kernel 7.2.9) |
+| MediaTek MT7922 (RZ616) | `mt7921e` | ⚠️ Exclusive, opt-in; shared fails ([#14](https://github.com/t4t5/owly/issues/14)) | Minisforum MS-A2, `14c3:0616`, NixOS 26.05 (kernels 6.18 and 7.2.5) |
+| MediaTek MT7927 | `mt7925e` | ❌ Shared: never heard; active monitor (opt-in) sends, but receiving times out ([#44](https://github.com/t4t5/owly/issues/44)) | TP-Link Archer TBE550E, `14c3:7927`, CachyOS (kernel 7.2.9) |
+| Realtek RTL8821CE | `rtw88_8821ce` | ❌ Shared: OWL syncs but no transfer, Wi-Fi often lost after ([#60](https://github.com/t4t5/owly/issues/60)); exclusive receives nothing | HP laptop, `10ec:c821`, Omarchy (kernel 7.2.5) |
+| Qualcomm WCN6855 (QCNFA765) | `ath11k_pci` | ❌ Can't create the monitor interface both modes need ([#45](https://github.com/t4t5/owly/issues/45)) | ThinkPad, `17cb:1103`, CachyOS (kernel 7.2.9) |
+| Qualcomm WCN7850 (FastConnect 7800) | `ath12k_wifi7_pci` | ❌ Shared: receives nothing from the phone ([#40](https://github.com/t4t5/owly/issues/40)); exclusive untested | `17cb:1107`, Fedora 44 (kernel 7.2.9) |
+| Intel Dual Band Wireless-AC 7265 | `iwlwifi` | ❌ Exclusive: firmware asserts on every ad-hoc start ([#16](https://github.com/t4t5/owly/issues/16)) | Zenbook UX305CA, `8086:095a`, Omarchy 4.0.4 (kernel 7.2.5) |
 | Intel Wireless-AC 8260 | `iwlwifi` | ❌ Exclusive: firmware resets on channel 44; no transfer on 6 | NUC6i7KYK, `8086:24f3`, Home Assistant OS (kernel 6.12) |
 | Intel 9260 | `iwlwifi` | ❓ Exclusive untested | — |
 | Intel AX210 | `iwlwifi` | ❓ Exclusive untested | — |

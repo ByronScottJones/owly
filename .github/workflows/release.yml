@@ -52,7 +52,7 @@ jobs:
   owly-assets:
     needs: owly
     # Not in forks, which have no release.
-    if: github.repository == 't4t5/omdrop-owl'
+    if: github.repository == 't4t5/owly'
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.release.outputs.tag }}

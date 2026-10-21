@@ -119,49 +119,49 @@ tested_on = ["GEEKOM IT13 Max, `8086:272b`, Omarchy 4.0.4 (kernel 7.2.5)"]
 name = "MediaTek MT7921"
 driver = "mt7921e"
 ids = ["14c3:7961"]
-status = "⚠️ Exclusive, opt-in; shared fails ([#14](https://github.com/t4t5/omdrop-owl/issues/14))"
+status = "⚠️ Exclusive, opt-in; shared fails ([#14](https://github.com/t4t5/owly/issues/14))"
 tested_on = ["`14c3:7961`, CachyOS (kernel 7.2.9)"]
 
 [[card]]
 name = "MediaTek MT7922 (RZ616)"
 driver = "mt7921e"
 ids = ["14c3:0616"]
-status = "⚠️ Exclusive, opt-in; shared fails ([#14](https://github.com/t4t5/omdrop-owl/issues/14))"
+status = "⚠️ Exclusive, opt-in; shared fails ([#14](https://github.com/t4t5/owly/issues/14))"
 tested_on = ["Minisforum MS-A2, `14c3:0616`, NixOS 26.05 (kernels 6.18 and 7.2.5)"]
 
 [[card]]
 name = "MediaTek MT7927"
 driver = "mt7925e"
 ids = ["14c3:7927"]
-status = "❌ Shared: never heard; active monitor (opt-in) sends, but receiving times out ([#44](https://github.com/t4t5/omdrop-owl/issues/44))"
+status = "❌ Shared: never heard; active monitor (opt-in) sends, but receiving times out ([#44](https://github.com/t4t5/owly/issues/44))"
 tested_on = ["TP-Link Archer TBE550E, `14c3:7927`, CachyOS (kernel 7.2.9)"]
 
 [[card]]
 name = "Realtek RTL8821CE"
 driver = "rtw88_8821ce"
 ids = ["10ec:c821"]
-status = "❌ Shared: OWL syncs but no transfer, Wi-Fi often lost after ([#60](https://github.com/t4t5/omdrop-owl/issues/60)); exclusive receives nothing"
+status = "❌ Shared: OWL syncs but no transfer, Wi-Fi often lost after ([#60](https://github.com/t4t5/owly/issues/60)); exclusive receives nothing"
 tested_on = ["HP laptop, `10ec:c821`, Omarchy (kernel 7.2.5)"]
 
 [[card]]
 name = "Qualcomm WCN6855 (QCNFA765)"
 driver = "ath11k_pci"
 ids = ["17cb:1103"]
-status = "❌ Can't create the monitor interface both modes need ([#45](https://github.com/t4t5/omdrop-owl/issues/45))"
+status = "❌ Can't create the monitor interface both modes need ([#45](https://github.com/t4t5/owly/issues/45))"
 tested_on = ["ThinkPad, `17cb:1103`, CachyOS (kernel 7.2.9)"]
 
 [[card]]
 name = "Qualcomm WCN7850 (FastConnect 7800)"
 driver = "ath12k_wifi7_pci"
 ids = ["17cb:1107"]
-status = "❌ Shared: receives nothing from the phone ([#40](https://github.com/t4t5/omdrop-owl/issues/40)); exclusive untested"
+status = "❌ Shared: receives nothing from the phone ([#40](https://github.com/t4t5/owly/issues/40)); exclusive untested"
 tested_on = ["`17cb:1107`, Fedora 44 (kernel 7.2.9)"]
 
 [[card]]
 name = "Intel Dual Band Wireless-AC 7265"
 driver = "iwlwifi"
 ids = ["8086:095a"]
-status = "❌ Exclusive: firmware asserts on every ad-hoc start ([#16](https://github.com/t4t5/omdrop-owl/issues/16))"
+status = "❌ Exclusive: firmware asserts on every ad-hoc start ([#16](https://github.com/t4t5/owly/issues/16))"
 tested_on = ["Zenbook UX305CA, `8086:095a`, Omarchy 4.0.4 (kernel 7.2.5)"]
 
 [[card]]

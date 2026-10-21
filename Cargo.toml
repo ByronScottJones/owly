@@ -12,7 +12,7 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.88"
 license = "MIT"
-repository = "https://github.com/t4t5/omdrop-owl"
+repository = "https://github.com/t4t5/owly"
 
 [workspace.lints.rust]
 # Code that needs unsafe allows it locally, with a SAFETY comment.

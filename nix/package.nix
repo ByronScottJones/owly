@@ -47,7 +47,7 @@ rustPlatform.buildRustPackage {
 
   meta = {
     description = "AirDrop's Wi-Fi radio on Linux: AWDL in userspace, the owlyd radio service, and the owly CLI";
-    homepage = "https://github.com/t4t5/omdrop-owl";
+    homepage = "https://github.com/t4t5/owly";
     license = lib.licenses.mit;
     platforms = lib.platforms.linux;
     mainProgram = "owly";

@@ -62,7 +62,7 @@ mode = "shared"
 reconnect_after_monitor = true
 mt76_pm_off = true
 issues = [
-    "The MT7927 starts in shared mode but its monitor interface never hears the phone. As an active monitor it's heard and can send, but the phone's uploads arrive at about 5 kB/s and time out (https://github.com/t4t5/omdrop-owl/issues/44). Exclusive mode through a hidden AP is untested.",
+    "The MT7927 starts in shared mode but its monitor interface never hears the phone. As an active monitor it's heard and can send, but the phone's uploads arrive at about 5 kB/s and time out (https://github.com/t4t5/owly/issues/44). Exclusive mode through a hidden AP is untested.",
 ]
 notes = "MediaTek MT7927 (TP-Link Archer TBE550E, 14c3:7927, kernel 7.2.9), on the MT7925's driver."
 
@@ -73,7 +73,7 @@ channels = [6]
 issues = [
     "This card sends injected unicast at 1 Mbit/s whatever rate is asked for, and not at all on 5 GHz, so discovery and the handshake often stall. Close and reopen the share sheet to retry.",
 ]
-notes = "MediaTek MT7921 (14c3:7961, kernel 7.2.9) and MT7922 (14c3:0616, kernels 6.18 and 7.2.5). No ad-hoc mode. Both ways with an iPhone on channel 6, but not reliably: a full frame at 1 Mbit/s CCK fills most of the one slot in sixteen the phone spends on channel 6. Shared mode fails (https://github.com/t4t5/omdrop-owl/issues/14). On 44, none of 132 injected unicast frames reached the air; on 6, 115 of 121 did."
+notes = "MediaTek MT7921 (14c3:7961, kernel 7.2.9) and MT7922 (14c3:0616, kernels 6.18 and 7.2.5). No ad-hoc mode. Both ways with an iPhone on channel 6, but not reliably: a full frame at 1 Mbit/s CCK fills most of the one slot in sixteen the phone spends on channel 6. Shared mode fails (https://github.com/t4t5/owly/issues/14). On 44, none of 132 injected unicast frames reached the air; on 6, 115 of 121 did."
 
 [drivers.mt76x2u]
 status = "tested"
@@ -97,7 +97,7 @@ status = "broken"
 mode = "exclusive"
 channels = [6]
 issues = [
-    "This Intel Wireless-AC 7265's firmware (7265D-29) asserts on every ad-hoc start (https://github.com/t4t5/omdrop-owl/issues/16).",
+    "This Intel Wireless-AC 7265's firmware (7265D-29) asserts on every ad-hoc start (https://github.com/t4t5/owly/issues/16).",
 ]
 notes = "Intel Dual Band Wireless-AC 7265 (Zenbook UX305CA, 8086:095a, kernel 7.2.5)."
 
@@ -123,7 +123,7 @@ status = "broken"
 mode = "shared"
 reconnect_after_monitor = true
 issues = [
-    "On the RTL8821CE, AWDL syncs with the phone in shared mode but no transfer completes, and Wi-Fi is often lost afterwards; in exclusive mode nothing is received (https://github.com/t4t5/omdrop-owl/issues/60).",
+    "On the RTL8821CE, AWDL syncs with the phone in shared mode but no transfer completes, and Wi-Fi is often lost afterwards; in exclusive mode nothing is received (https://github.com/t4t5/owly/issues/60).",
 ]
 notes = "Realtek RTL8821CE (HP laptop, 10ec:c821, kernel 7.2.5)."
 
@@ -153,7 +153,7 @@ notes = "Realtek RTL8852BU (USB, 35bc:0108, kernel 7.2.9), as a second card besi
 status = "broken"
 mode = "shared"
 issues = [
-    "This Qualcomm card can't create the monitor interface every mode needs (https://github.com/t4t5/omdrop-owl/issues/45).",
+    "This Qualcomm card can't create the monitor interface every mode needs (https://github.com/t4t5/owly/issues/45).",
 ]
 notes = "Qualcomm WCN6855 (QCNFA765, ThinkPad, 17cb:1103, kernel 7.2.9)."
 
@@ -161,7 +161,7 @@ notes = "Qualcomm WCN6855 (QCNFA765, ThinkPad, 17cb:1103, kernel 7.2.9)."
 status = "broken"
 mode = "shared"
 issues = [
-    "This Qualcomm card hears nothing from the phone in shared mode (https://github.com/t4t5/omdrop-owl/issues/40). Exclusive mode is untested.",
+    "This Qualcomm card hears nothing from the phone in shared mode (https://github.com/t4t5/owly/issues/40). Exclusive mode is untested.",
 ]
 notes = "Qualcomm WCN7850 (FastConnect 7800, 17cb:1107, Fedora 44, kernel 7.2.9)."
 
