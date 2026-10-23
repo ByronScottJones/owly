@@ -110,6 +110,15 @@ issues = [
 ]
 notes = "Intel Wireless-AC 8260 (NUC6i7KYK, 8086:24f3, kernel 6.12)."
 
+[devices."8086:24fd"]
+status = "broken"
+mode = "exclusive"
+channels = [6]
+issues = [
+    "This Intel Wireless-AC 8265's firmware (8265-36) stalls a transmit queue and resets about 10 s after the ad-hoc cell starts on channel 6.",
+]
+notes = "Intel Dual Band Wireless-AC 8265 (EliteBook x360 1030 G3, 8086:24fd, kernel 6.12). The reset repeats until the driver is reloaded. With a hidden AP forced in the cell's place, it runs without resetting but hears no AWDL action frames from the phone."
+
 [drivers.rtw88_8822be]
 status = "tested"
 mode = "exclusive"
