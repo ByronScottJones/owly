@@ -163,7 +163,7 @@ A card with no entry in `drivers.toml` gets the `*` entry, which runs only with 
 
 **Shared.** Wi-Fi stays connected, and AWDL shares the AP's channel, which has to be **6, 44 or 149**. Owly injects frames through a monitor interface with the station's MAC, and advertises only the phone's slots on that channel. The station ACKs the phone's frames.
 
-**Exclusive.** For cards that can't inject while connected, such as every Intel card tested. Wi-Fi is down while the radio is up, and comes back when it's given back. An ad-hoc cell on AWDL's BSSID takes the station's place to ACK the phone's frames, or a hidden AP (hostapd) on cards with no ad-hoc mode. It tries channels 44, 149 and 6 in that order, of those the card may transmit on, since an iPhone gives AWDL more slots on 5 GHz. Intel cards go straight to 6, since none has held a 5 GHz cell.
+**Exclusive.** For cards that can't inject while connected, such as every Intel card tested. Wi-Fi is down while the radio is up, and comes back when it's given back. An ad-hoc cell on AWDL's BSSID takes the station's place to ACK the phone's frames, or a hidden AP (hostapd) on cards with no ad-hoc mode. It tries channels 44, 149 and 6 in that order, of those the card may transmit on, since an iPhone gives AWDL more slots on 5 GHz. Intel cards go straight to 6, the only channel where a phone has used their cell.
 
 **Active monitor.** For cards with neither, such as the MediaTek MT7612U and MT7921: an active monitor carrying the station's MAC ACKs in place of the cell.
 
