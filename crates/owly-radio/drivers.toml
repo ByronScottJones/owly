@@ -151,7 +151,7 @@ notes = "Realtek RTL8852BE (ASUS PRIME B550M-A WIFI II, 10ec:b852, kernel 7.2.9)
 status = "untested"
 mode = "shared"
 reconnect_after_monitor = true
-notes = "Realtek RTL8852CE (Legion Slim 5 16AHP9, 10ec:c852, kernel 7.2.5). Works in shared mode. Whether reconnect is needed is untested."
+notes = "Realtek RTL8852CE (Legion Slim 5 16AHP9, 10ec:c852, kernel 7.2.5; ThinkBook 16 G7 IML, kernel 7.0). Works in shared mode. Exclusive mode works too, both directions, on the ThinkBook. Whether reconnect is needed is untested."
 
 [drivers.rtw89_8852bu]
 status = "untested"
