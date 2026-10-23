@@ -154,7 +154,7 @@ A sequence of TLVs follows the header.
 | 0, 1, 8–11, 13–15 | (deprecated) | no, ignore |
 | other | (unknown) | no, MUST be skipped by length, not rejected |
 
-A PSF carries types 4, 5, 18, 24, 6, 12 and 21, in that order. A MIF adds 7 and 16 after 6.
+A PSF carries types 4, 5, 18, 24, 6, 7, 12 and 21, in that order. A MIF adds 16 after 7.
 
 The layouts follow. Offsets are into the TLV's value, after its 3-byte header. The layouts of types 2, 20 and 22 aren't defined in this version.
 

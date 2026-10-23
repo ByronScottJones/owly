@@ -488,18 +488,18 @@ pub fn put_version(out: &mut Vec<u8>, devclass: u8) {
     });
 }
 
-/// A PSF's or MIF's TLVs, in legacy's order. Only MIFs carry the HT
-/// capabilities and the host name.
+/// A PSF's or MIF's TLVs, in legacy's order. Both carry the HT
+/// capabilities, as an iPhone's do; only MIFs carry the host name.
 pub fn put_all(out: &mut Vec<u8>, own: &Own, mif: bool) {
     put_sync_params(out, own);
     put_election_v1(out, own);
     put_channel_sequence(out, own);
     put_election_v2(out, own);
     put_service_params(out);
+    if let Some(ht) = &own.ht {
+        put_ht_capabilities(out, ht);
+    }
     if mif {
-        if let Some(ht) = &own.ht {
-            put_ht_capabilities(out, ht);
-        }
         put_arpa(out, own.name);
     }
     put_data_path_state(out, own);
@@ -561,9 +561,12 @@ mod tests {
         assert_eq!(a.version, Some((VERSION, devclass::MACOS)));
         assert_eq!(a.ht, Some(HtCapabilities::ONE_STREAM));
         assert_eq!(a.data_path.unwrap().country, Some(*b"X0\0"));
-        // PSFs leave out the name and HT capabilities.
-        let psf = Advert::parse(&own_frame(false)).unwrap();
-        assert_eq!((psf.name, psf.ht), (None, None));
+        // PSFs leave out only the name.
+        let psf = own_frame(false);
+        let kinds: Vec<u8> = tlvs(&psf).map(|t| t.unwrap().kind).collect();
+        assert_eq!(kinds, vec![4, 5, 18, 24, 6, 7, 12, 21]);
+        let psf = Advert::parse(&psf).unwrap();
+        assert_eq!((psf.name, psf.ht), (None, Some(HtCapabilities::ONE_STREAM)));
     }
 
     #[test]

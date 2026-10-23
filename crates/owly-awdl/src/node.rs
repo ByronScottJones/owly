@@ -164,7 +164,7 @@ pub struct Stats {
 
 /// Announced in the Version TLV: macOS, as legacy announced.
 const DEVCLASS: u8 = tlv::devclass::MACOS;
-/// What the MIFs' HT Capabilities TLV announces.
+/// What the HT Capabilities TLV announces.
 const HT: HtCapabilities = HtCapabilities::ONE_STREAM;
 /// PSFs every 110 TU (§3.2).
 const PSF_INTERVAL_TU: u16 = 110;
