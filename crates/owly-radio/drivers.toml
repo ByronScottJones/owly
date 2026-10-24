@@ -158,6 +158,15 @@ status = "untested"
 mode = "exclusive"
 notes = "Realtek RTL8852BU (USB, 35bc:0108, kernel 7.2.9), as a second card beside a connected built-in one. No ad-hoc mode: runs beside a hidden AP. Both directions on channel 149; nothing heard on 44, which that iPhone never used. Ships in USB storage mode (0bda:1a2b) until usb_modeswitch."
 
+[drivers.rtl8xxxu]
+status = "untested"
+mode = "exclusive"
+channels = [6]
+issues = [
+    "This card has only 2.4 GHz, so it runs on channel 6, where an iPhone spends one slot in sixteen: a 2.6 MB photo takes about 75 s.",
+]
+notes = "Realtek RTL8188FTV (USB, 0bda:f179, kernel 6.14). No ad-hoc mode: runs a hidden AP. A 2.6 MB photo from an iPhone on channel 6 at 32 to 35 kB/s. Sending to the phone is untested: that machine had no Bluetooth for the BLE wake-up."
+
 [drivers.ath11k_pci]
 status = "broken"
 mode = "shared"
@@ -179,12 +188,3 @@ status = "untested"
 mode = "shared"
 reconnect_after_monitor = true
 notes = "Any other card. Needs monitor-mode injection while associated, and an AP on channel 6, 44 or 149."
-
-[drivers.rtl8xxxu]
-status = "untested"
-mode = "exclusive"
-channels = [6]
-issues = [
-    "This card is single-band 2.4 GHz only, so AirDrop runs on Channel 6 with limited time slots (transfer speed ~32-35 kB/s; ~75s for 2.5 MB).",
-]
-notes = "Realtek RTL8188FTV (0bda:f179, kernel 6.14.0-37-generic). 2.4 GHz only. Phone -> Computer AirDrop transfer tested and working in exclusive mode via hidden AP."
