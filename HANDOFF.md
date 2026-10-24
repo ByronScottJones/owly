@@ -4,7 +4,7 @@ What is left, and where to resume. Open items only; finished work is in [CHANGEL
 
 ## 1. Status
 
-- Updated: 2026-10-24T22:20:00Z
+- Updated: 2026-10-24T22:40:00Z
 - In flight: none. `feature/tauri-gui` completes the window (CHANGELOG.md).
 - Verified on 2026-10-24 on the Ubuntu 26.04 VM (no Wi-Fi card): format, lints, unit tests, spec coverage, `cargo deny check`, the frontend checks and accessibility scan, the portability checks, `just hwsim` and `just gui-e2e`. The veth tests of `owly-airdrop` ran as root from a copy of the binary: 19 of 26 passed, and the 7 failures only read a vectors file the namespace can't reach. They have not run as a user on the VM (H-1).
 - CI on GitHub has not run the new `gui` job, the `owly-gui` package job or its install check (H-7).
@@ -35,7 +35,6 @@ None.
 ## 5. Decisions needed
 
 - **`just gui-e2e` in CI?** It clicks fixed coordinates in a 960x600 window, so font or theme differences between runners could break it. Recommendation: keep it a local check until the `gui` job has run on GitHub a few times, then add it as its own job so it can't hide the others.
-- **`assets/` (the Finder reference screenshots) is untracked.** Recommendation: commit it, since README and ENGINEERING.md refer to the layout.
 - **CHANGELOG.md history.** One backfilled entry stands for everything before the window. Recommendation: leave it, since `git log --merges` has the rest.
 
 ## 6. Known issues, risks and unverified areas
@@ -47,7 +46,7 @@ None.
 
 ## 7. Environment and access notes
 
-- The test VM is an Ubuntu 26.04 arm64 guest in UTM, reached by SSH with the owner's key; the user has passwordless sudo there. The Mac cannot build `owly-radio` (netlink), so builds and tests run on the VM, synced with rsync excluding `target`, `.git`, `node_modules`, `ui/dist`, `assets` and `.claude` (a `.claude` directory under `crates/` breaks the workspace's `crates/*` glob).
+- The test VM is an Ubuntu 26.04 arm64 guest in UTM, reached by SSH with the owner's key; the user has passwordless sudo there. The Mac cannot build `owly-radio` (netlink), so builds and tests run on the VM, synced with rsync excluding `target`, `.git`, `node_modules`, `ui/dist` and `.claude` (a `.claude` directory under `crates/` breaks the workspace's `crates/*` glob).
 - Network access to the VM is blocked inside Claude Code's sandbox; those commands need it lifted.
 - GitHub work goes through `ghx` (see `agents/git.md`); the repositories are private. No credentials are recorded here.
 - A local Qwen3.8 27B is available through lmstudio-rs-mcp (`agents/lmstudio-subagents.md`). On 2026-10-24 its `run_subagent` calls timed out after 60 s (the server's idle limit) even for a one-directory task, though `health_check` passed; it may need a smaller or non-thinking model for tool loops.
@@ -55,4 +54,3 @@ None.
 ## 8. Cleanup debt
 
 - On the VM: `~/uictl-src` (a clone of uictl, reviewed and not installed), `/tmp/owly-gui-e2e`, and packages installed for testing (`just`, `hostapd`, `xdotool`, `xvfb`, WebKitGTK development packages).
-- `assets/` is untracked (see section 5).
