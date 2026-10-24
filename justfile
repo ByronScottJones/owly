@@ -126,6 +126,15 @@ gui-a11y:
     sleep 3
     xvfb-run -a python3 mock/a11y.py
 
+# The real window against a fake owlyd and a veth "phone": files and links both ways, clicked through under Xvfb (sudo; needs xvfb, xdotool, python3-gi, gir1.2-gtk-3.0)
+[group('gui')]
+gui-e2e:
+    npm --prefix crates/owly-gui/ui ci
+    npm --prefix crates/owly-gui/ui run build
+    cargo build --locked -p owlyd -p owly-cli
+    cargo build --locked -p owly-gui --features tauri/custom-protocol
+    tests/gui-e2e/run.sh
+
 # Run the GUI with live reload, taking the radio from owlyd as `owly radio up` does
 [group('gui')]
 gui-dev:

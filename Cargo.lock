@@ -2823,6 +2823,7 @@ dependencies = [
  "owlyd",
  "rustls",
  "serde_json",
+ "tempfile",
  "tokio",
  "tracing",
  "zbus",
