@@ -129,10 +129,10 @@ fn stop_sessions(inner: &mut Inner) {
     inner.visibility = Visibility::Off;
 }
 
-/// The Doctor panel's data: owlyd's capability report, as JSON text.
+/// The Doctor panel's data: what `owly doctor --json` prints.
 #[tauri::command]
-pub async fn doctor(state: State<'_, AppState>) -> Result<String, AppError> {
-    Ok(radio::probe(state.config.bus.as_deref()).await?)
+pub async fn doctor(state: State<'_, AppState>) -> Result<serde_json::Value, AppError> {
+    Ok(owly_session::doctor::report(state.config.bus.as_deref()).await)
 }
 
 #[tauri::command]

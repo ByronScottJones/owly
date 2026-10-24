@@ -92,7 +92,8 @@ export function errorText(e: unknown): string {
 export const getStatus = (): Promise<Status> => invoke<Status>("get_status");
 export const acquireRadio = (): Promise<void> => invoke("acquire_radio");
 export const releaseRadio = (): Promise<void> => invoke("release_radio");
-export const doctor = (): Promise<string> => invoke<string>("doctor");
+export const doctor = (): Promise<DoctorReport> =>
+  invoke<DoctorReport>("doctor");
 export const startBrowse = (): Promise<void> => invoke("start_browse");
 export const stopBrowse = (): Promise<void> => invoke("stop_browse");
 export const setVisibility = (mode: Visibility): Promise<void> =>
@@ -111,4 +112,36 @@ export function on<T>(
   handler: (payload: T) => void,
 ): Promise<UnlistenFn> {
   return listen<T>(event, (e) => handler(e.payload));
+}
+
+/** One thing owly doctor found missing, and what to do about it. */
+export interface Missing {
+  id: string;
+  say: string;
+}
+
+export interface CardChannel {
+  channel: number;
+  why?: string;
+}
+
+/** `owly doctor --json`: only the fields the Doctor panel shows. */
+export interface DoctorReport {
+  station?: string | null;
+  driver?: string | null;
+  device?: string | null;
+  status?: string | null;
+  mode?: string | null;
+  channel?: number | null;
+  card?: {
+    phy?: string;
+    ibss?: boolean;
+    ap?: boolean;
+    active_monitor?: boolean;
+    monitor_beside_station?: boolean;
+    regdom?: string;
+    channels?: CardChannel[];
+  } | null;
+  missing?: Missing[];
+  issues?: string[];
 }

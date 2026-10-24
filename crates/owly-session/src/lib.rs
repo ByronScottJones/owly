@@ -6,6 +6,7 @@
 
 pub mod bluez;
 pub mod discover;
+pub mod doctor;
 mod ids;
 pub mod link;
 mod notes;

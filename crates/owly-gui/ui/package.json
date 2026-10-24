@@ -9,7 +9,8 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
     "format": "prettier --check .",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "a11y": "xvfb-run -a python3 mock/a11y.py"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",

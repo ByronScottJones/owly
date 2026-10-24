@@ -16,6 +16,7 @@ owly-airdrop = { path = "../owly-airdrop", features = ["mdns"] }
 owly-awdl = { path = "../owly-awdl" }
 owly-radio = { path = "../owly-radio" }
 owlyd = { path = "../owlyd" }
+serde_json = "1"
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 tracing = "0.1"
 tokio = { version = "1", features = ["macros", "rt", "sync", "time"] }

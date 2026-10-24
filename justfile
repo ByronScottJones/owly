@@ -109,6 +109,18 @@ gui-check:
     cargo clippy -p owly-gui --all-targets --locked -- -D warnings
     cargo test -p owly-gui --locked
 
+# axe-core against each UI state in WebKitGTK, light and dark (needs xvfb, python3-gi, python3-gi-cairo, gir1.2-webkit2-4.1)
+[group('gui')]
+gui-a11y:
+    npm --prefix crates/owly-gui/ui ci
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd crates/owly-gui/ui
+    npx vite --port 1420 --strictPort >/dev/null 2>&1 &
+    trap 'kill $!' EXIT
+    sleep 3
+    xvfb-run -a python3 mock/a11y.py
+
 # Run the GUI with live reload, taking the radio from owlyd as `owly radio up` does
 [group('gui')]
 gui-dev:

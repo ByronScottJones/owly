@@ -149,14 +149,3 @@ pub async fn state(bus: Option<&str>) -> Result<String, RadioError> {
         .await
         .map_err(|e| RadioError::from_zbus(&e))
 }
-
-/// owlyd's capability report, as JSON (what `owly doctor --json` prints).
-pub async fn probe(bus: Option<&str>) -> Result<String, RadioError> {
-    let conn = api::connect(bus)
-        .await
-        .map_err(|e| RadioError::from_zbus(&e))?;
-    let radio = api::radio(&conn)
-        .await
-        .map_err(|e| RadioError::from_zbus(&e))?;
-    radio.probe().await.map_err(|e| RadioError::from_zbus(&e))
-}
