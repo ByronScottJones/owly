@@ -124,6 +124,7 @@ Make sure you set your phone's Airdrop setting to "Everyone for 10 minutes".
 | Intel AX211 | `iwlwifi` | ✅ Exclusive | • ThinkPad X1, `8086:51f1`, Ubuntu 26.04 (kernel 7.0)<br>• XPS 9320, `8086:51f0`, Arch (kernel 7.2.3)<br>• Legion Pro 7 16IRX8H, `8086:7a70`, Omarchy 4.0.4 (kernel 7.2.3)<br>• TUXEDO InfinityBook Max 15 Gen10 (Arrow Lake), `8086:7740`, Kubuntu 26.04.1 (kernel 7.0) |
 | Intel BE (Panther Lake) | `iwlwifi` | ✅ Exclusive | XPS 16, `8086:e440`, Arch (kernel 7.2) |
 | Intel BE200 | `iwlwifi` | ✅ Exclusive | GEEKOM IT13 Max, `8086:272b`, Omarchy 4.0.4 (kernel 7.2.5) |
+| Intel 9260 | `iwlwifi` | ✅ Exclusive | `8086:2526`, Debian 13 (kernel 7.2.12) |
 | MediaTek MT7921 | `mt7921e` | ⚠️ Exclusive, opt-in; shared fails ([#14](https://github.com/t4t5/owly/issues/14)) | `14c3:7961`, CachyOS (kernel 7.2.9) |
 | MediaTek MT7922 (RZ616) | `mt7921e` | ⚠️ Exclusive, opt-in; shared fails ([#14](https://github.com/t4t5/owly/issues/14)) | Minisforum MS-A2, `14c3:0616`, NixOS 26.05 (kernels 6.18 and 7.2.5) |
 | Realtek RTL8188FTV (USB) | `rtl8xxxu` | ⚠️ Exclusive (opt-in) | INTEL H81, `0bda:f179`, Linux Mint 22.3 (kernel 6.14.0): partly |
@@ -134,7 +135,6 @@ Make sure you set your phone's Airdrop setting to "Everyone for 10 minutes".
 | Intel Dual Band Wireless-AC 7265 | `iwlwifi` | ❌ Exclusive: firmware asserts on every ad-hoc start ([#16](https://github.com/t4t5/owly/issues/16)) | Zenbook UX305CA, `8086:095a`, Omarchy 4.0.4 (kernel 7.2.5) |
 | Intel Wireless-AC 8260 | `iwlwifi` | ❌ Exclusive: firmware resets on channel 44; no transfer on 6 | NUC6i7KYK, `8086:24f3`, Home Assistant OS (kernel 6.12) |
 | Intel Dual Band Wireless-AC 8265 | `iwlwifi` | ❌ Exclusive: firmware resets about 10 s after the ad-hoc cell starts; through a hidden AP, nothing heard from the phone | EliteBook x360 1030 G3, `8086:24fd`, Manjaro (kernel 6.12) |
-| Intel 9260 | `iwlwifi` | ❓ Exclusive untested | — |
 | Intel AX210 | `iwlwifi` | ❓ Exclusive untested | — |
 
 <!-- hardware-table:end -->

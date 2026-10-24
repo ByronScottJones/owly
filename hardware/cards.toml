@@ -191,7 +191,9 @@ tested_on = ["EliteBook x360 1030 G3, `8086:24fd`, Manjaro (kernel 6.12)"]
 [[card]]
 name = "Intel 9260"
 driver = "iwlwifi"
-status = "❓ Exclusive untested"
+ids = ["8086:2526"]
+status = "✅ Exclusive"
+tested_on = ["`8086:2526`, Debian 13 (kernel 7.2.12)"]
 
 [[card]]
 name = "Intel AX210"
