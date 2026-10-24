@@ -12,12 +12,14 @@
 //!   `owly radio up` first.
 //! - `owly test-card`: walks a tester through a photo each way, watches
 //!   Wi-Fi after teardown, and writes a JSON report.
+//! - `owly gui`: opens the AirDrop window, owly-gui.
 //! - `owly capture`: records an AWDL session for the capture corpus, on
 //!   the monitor interface of the session that's up. Takes root.
 
 mod airdrop;
 mod capture;
 mod doctor;
+mod gui;
 mod radio;
 mod test_card;
 
@@ -55,6 +57,8 @@ enum Command {
     TestCard(test_card::Args),
     /// Record an AWDL session with a phone for tests/captures (root).
     Capture(capture::Args),
+    /// Open the AirDrop window (the owly-gui package).
+    Gui,
 }
 
 #[derive(Subcommand)]
@@ -96,6 +100,7 @@ fn main() -> ExitCode {
             Command::Browse(args) => airdrop::browse(args).await,
             Command::TestCard(args) => test_card::run(bus, args).await,
             Command::Capture(args) => capture::run(args).await,
+            Command::Gui => gui::run(),
         }
     });
     match result {

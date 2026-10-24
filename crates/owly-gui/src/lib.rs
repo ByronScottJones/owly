@@ -71,6 +71,18 @@ pub fn run() {
         .on_navigation(|_, url| may_navigate(url))
         .build();
     let app = tauri::Builder::default()
+        // First, as the plugin requires: a second launch (a second `owly gui`
+        // or a desktop-entry click) raises this window instead of starting
+        // another that would fight it for the radio and port 8771.
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            // A compositor may refuse to raise a window; the user then
+            // finds it themselves, so these failures are only logged.
+            if let Some(window) = app.get_webview_window("main")
+                && let Err(e) = window.unminimize().and_then(|()| window.set_focus())
+            {
+                tracing::debug!("could not raise the running window: {e}");
+            }
+        }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(guard)
         .on_webview_event(|webview, event| {

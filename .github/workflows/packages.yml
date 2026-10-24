@@ -89,7 +89,7 @@ jobs:
         run: |
           if command -v apt-get > /dev/null; then
             apt-get update
-            apt-get install -y ./owly_*.deb
+            apt-get install -y ./owly_*.deb ./owly-gui_*.deb
           else
             dnf install -y ./owly-*.rpm
           fi
@@ -99,6 +99,14 @@ jobs:
           owly --version
           test -x /usr/lib/owly/owlyd
           grep -qx 'ExecStart=/usr/lib/owly/owlyd' /usr/lib/systemd/system/owlyd.service
+          # The window, on the releases that have a .deb of it: its libraries
+          # resolved, and the desktop entry valid.
+          if command -v apt-get > /dev/null; then
+            test -x /usr/bin/owly-gui
+            ! ldd /usr/bin/owly-gui | grep 'not found'
+            apt-get install -y desktop-file-utils
+            desktop-file-validate /usr/share/applications/owly-gui.desktop
+          fi
 
   nix:
     runs-on: ubuntu-latest

@@ -116,12 +116,13 @@ gui-check:
 # axe-core against each UI state in WebKitGTK, light and dark (needs xvfb, python3-gi, python3-gi-cairo, gir1.2-webkit2-4.1)
 [group('gui')]
 gui-a11y:
-    npm --prefix crates/owly-gui/ui ci
     #!/usr/bin/env bash
     set -euo pipefail
     cd crates/owly-gui/ui
-    npx vite --port 1420 --strictPort >/dev/null 2>&1 &
-    trap 'kill $!' EXIT
+    npm ci
+    node_modules/.bin/vite --port 1420 --strictPort >/dev/null 2>&1 &
+    # The server may already be gone when the scan ends.
+    trap 'kill $! 2>/dev/null || true' EXIT
     sleep 3
     xvfb-run -a python3 mock/a11y.py
 
@@ -131,11 +132,11 @@ gui-dev:
     npm --prefix crates/owly-gui/ui ci
     cd crates/owly-gui && ui/node_modules/.bin/tauri dev
 
-# Build the GUI's .deb
+# Build the GUI's .deb (target/release/bundle/deb/)
 [group('gui')]
 gui-build:
     npm --prefix crates/owly-gui/ui ci
-    cd crates/owly-gui && ui/node_modules/.bin/tauri build
+    cd crates/owly-gui && ui/node_modules/.bin/tauri build --bundles deb -- --locked
 
 # Preview README as GitHub renders it (dark by default; `just readme-preview light`)
 readme-preview theme="dark":
@@ -156,7 +157,7 @@ bump version:
     old=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml)
     sed -i "s/^version = \"$old\"$/version = \"$new\"/" Cargo.toml
     sed -i "s/^owly-awdl = { version = \"$old\"/owly-awdl = { version = \"$new\"/" crates/owly-radio/Cargo.toml
-    sed -i "s/^  \"version\": \"$old\"/  \"version\": \"$new\"/" crates/owly-gui/tauri.conf.json
+    sed -i -e "s/^  \"version\": \"$old\"/  \"version\": \"$new\"/" -e "s/\"owly (>= $old)\"/\"owly (>= $new)\"/" crates/owly-gui/tauri.conf.json
     sed -i "s/^  \"version\": \"$old\"/  \"version\": \"$new\"/" crates/owly-gui/ui/package.json
     sed -i -e "s/^pkgver=.*/pkgver=$new/" -e "s/^pkgrel=.*/pkgrel=1/" packaging/arch/*/PKGBUILD
     cargo update --workspace --quiet
