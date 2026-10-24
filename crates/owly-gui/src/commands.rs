@@ -187,8 +187,16 @@ pub async fn start_browse(app: AppHandle, state: State<'_, AppState>) -> Result<
 async fn browse_loop(app: AppHandle, iface: Interface, name: String) {
     let notes = notes(&app);
     let state = app.state::<AppState>();
-    // BLE-1: wakes Apple receivers for as long as we're looking.
-    let _advert = discover::advertise(false, &notes).await;
+    // BLE-1: wakes Apple receivers for as long as we're looking. On its own
+    // task: with no BlueZ on the bus, activating it takes 25 s to time out,
+    // and scanning must not wait for that.
+    let _advert = Task::new(tauri::async_runtime::spawn({
+        let notes = notes.clone();
+        async move {
+            let _guard = discover::advertise(false, &notes).await;
+            std::future::pending::<()>().await;
+        }
+    }));
     loop {
         let Ok(sender) = new_sender(name.clone()) else {
             notes.say("couldn't make a sender");
@@ -473,9 +481,13 @@ async fn start_receiving(app: &AppHandle, state: &AppState) -> Result<(), AppErr
         flags: RECEIVER_FLAGS,
         burst: link::burst(announce, &notes),
     };
-    let mut running = receive::start(&iface, &receive::state_dir()?, settings).await?;
+    let running = receive::start(&iface, &receive::state_dir()?, settings).await?;
     let task_app = app.clone();
     inner.receiver = Some(Task::new(tauri::async_runtime::spawn(async move {
+        // All of it, not just `events`: dropping the mDNS registration stops
+        // the announcements, and the task is what keeps it for as long as
+        // the receiver runs.
+        let mut running = running;
         while let Some(event) = running.events.recv().await {
             on_receiver_event(&task_app, event).await;
         }
