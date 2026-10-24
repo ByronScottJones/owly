@@ -13,3 +13,8 @@ other-libs
 /target/
 
 .readme-preview.html
+
+# The GUI frontend: dependencies and build output.
+/crates/owly-gui/ui/node_modules/
+/crates/owly-gui/ui/dist/
+/crates/owly-gui/gen/

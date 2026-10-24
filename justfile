@@ -17,11 +17,11 @@ default:
 # Formatting and lints, quick enough for before each commit
 check:
     cargo fmt --all --check
-    cargo clippy --workspace --all-targets --locked -- -D warnings
+    cargo clippy --workspace --exclude owly-gui --all-targets --locked -- -D warnings
 
-# The workspace's tests
+# The workspace's tests (the GUI's are `just gui-check`)
 test:
-    cargo test --workspace --locked
+    cargo test --workspace --exclude owly-gui --locked
 
 # Everything CI checks: lints, tests, portability, spec coverage, vectors, the hardware table
 ci: check test
@@ -98,6 +98,29 @@ send *args="tests/photo.png":
 owly *args:
     {{ owly }} "$@"
 
+# The GUI's checks: needs Node and WebKitGTK's development packages (libwebkit2gtk-4.1-dev, libgtk-3-dev)
+[group('gui')]
+gui-check:
+    npm --prefix crates/owly-gui/ui ci
+    npm --prefix crates/owly-gui/ui run check
+    npm --prefix crates/owly-gui/ui run format
+    npm --prefix crates/owly-gui/ui test
+    npm --prefix crates/owly-gui/ui run build
+    cargo clippy -p owly-gui --all-targets --locked -- -D warnings
+    cargo test -p owly-gui --locked
+
+# Run the GUI with live reload, taking the radio from owlyd as `owly radio up` does
+[group('gui')]
+gui-dev:
+    npm --prefix crates/owly-gui/ui ci
+    cd crates/owly-gui && ui/node_modules/.bin/tauri dev
+
+# Build the GUI's .deb
+[group('gui')]
+gui-build:
+    npm --prefix crates/owly-gui/ui ci
+    cd crates/owly-gui && ui/node_modules/.bin/tauri build
+
 # Preview README as GitHub renders it (dark by default; `just readme-preview light`)
 readme-preview theme="dark":
     #!/usr/bin/env bash
@@ -108,7 +131,7 @@ readme-preview theme="dark":
     sed -i 's|<html lang="en">|<html lang="en" data-color-mode="{{ theme }}" data-{{ theme }}-theme="{{ theme }}">|' "$out"
     xdg-open "$out"
 
-# Set the version in Cargo.toml, owly-radio's owly-awdl pin, Cargo.lock and the PKGBUILDs (pushing it releases)
+# Set the version in Cargo.toml, owly-radio's owly-awdl pin, the GUI's config, Cargo.lock and the PKGBUILDs (pushing it releases)
 bump version:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -117,6 +140,8 @@ bump version:
     old=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml)
     sed -i "s/^version = \"$old\"$/version = \"$new\"/" Cargo.toml
     sed -i "s/^owly-awdl = { version = \"$old\"/owly-awdl = { version = \"$new\"/" crates/owly-radio/Cargo.toml
+    sed -i "s/^  \"version\": \"$old\"/  \"version\": \"$new\"/" crates/owly-gui/tauri.conf.json
+    sed -i "s/^  \"version\": \"$old\"/  \"version\": \"$new\"/" crates/owly-gui/ui/package.json
     sed -i -e "s/^pkgver=.*/pkgver=$new/" -e "s/^pkgrel=.*/pkgrel=1/" packaging/arch/*/PKGBUILD
     cargo update --workspace --quiet
     echo "$old -> $new"

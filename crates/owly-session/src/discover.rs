@@ -225,3 +225,66 @@ pub async fn browse_receivers(
         }
     }
 }
+
+/// Every receiver that answers within `limit`, by mDNS and, on an owlyd
+/// lease, by `/Discover` at the radio's AWDL peers (DISC-5), one entry per
+/// instance.
+pub async fn scan(
+    iface: &Interface,
+    sender: &Sender,
+    lease: Option<&Lease>,
+    limit: Duration,
+    notes: &Notes,
+) -> Vec<Listed> {
+    let found = std::sync::Mutex::new(Vec::<Listed>::new());
+    let add = |listed: &Listed| {
+        // A poisoned list only means another listing panicked half-way.
+        let mut found = found.lock().unwrap_or_else(|e| e.into_inner());
+        if !found.iter().any(|l| l.instance == listed.instance) {
+            found.push(listed.clone());
+        }
+        false
+    };
+    let by_mdns = async {
+        if let Err(e) = browse_receivers(iface, sender, limit, add, notes).await {
+            notes.say(format!("not browsing mDNS: {e}"));
+        }
+    };
+    let by_peers = async {
+        let Some(lease) = lease else { return };
+        let deadline = tokio::time::Instant::now() + limit;
+        let mut seen = std::collections::HashSet::new();
+        while tokio::time::Instant::now() < deadline {
+            for mac in lease.peers().await {
+                if !seen.insert(mac) {
+                    continue;
+                }
+                let addr = SocketAddrV6::new(mac.link_local(), AIRDROP_PORT, 0, iface.index);
+                let wait = deadline
+                    .saturating_duration_since(tokio::time::Instant::now())
+                    .min(Duration::from_secs(3));
+                if let Ok(Ok(Some(receiver))) =
+                    tokio::time::timeout(wait, sender.discover(addr)).await
+                {
+                    let mut found = found.lock().unwrap_or_else(|e| e.into_inner());
+                    let instance = mac.to_string();
+                    if !found.iter().any(|l| l.instance == instance) {
+                        found.push(Listed {
+                            instance,
+                            name: receiver.computer_name,
+                            addr,
+                            // UP-1b: no TXT to say, and Apple receivers take DVZip.
+                            flags: RECEIVER_FLAGS | SUPPORTS_DVZIP,
+                        });
+                    }
+                } else {
+                    // Not answering yet: an iPhone may open its port later.
+                    seen.remove(&mac);
+                }
+            }
+            tokio::time::sleep(Duration::from_millis(500)).await;
+        }
+    };
+    tokio::join!(by_mdns, by_peers);
+    found.into_inner().unwrap_or_else(|e| e.into_inner())
+}

@@ -20,7 +20,6 @@ mod capture;
 mod doctor;
 mod radio;
 mod test_card;
-mod wifi;
 
 use std::process::ExitCode;
 

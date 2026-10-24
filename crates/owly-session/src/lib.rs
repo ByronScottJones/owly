@@ -9,7 +9,9 @@ pub mod discover;
 mod ids;
 pub mod link;
 mod notes;
+pub mod radio;
 pub mod receive;
+pub mod wifi;
 
 pub use ids::{AIRDROP_PORT, RECEIVE_PORT, new_sender, parse_mac, random_service_id};
 pub use notes::Notes;

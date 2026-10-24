@@ -35,15 +35,25 @@ impl Interface {
     }
 }
 
-/// Picks rustls's crypto provider, which ring is here, and the interface
-/// and the name others see: `name`, or the host name.
-pub fn resolve(iface: &str, name: Option<&str>) -> io::Result<(Interface, String)> {
+/// Picks rustls's crypto provider, which ring is here. Call it before the
+/// first TLS connection.
+pub fn install_crypto() {
     // Fails only when a provider is already installed, which is as good.
     let _ = rustls::crypto::ring::default_provider().install_default();
+}
+
+/// This host's name, which is what others see by default.
+pub fn host_name() -> io::Result<String> {
+    Ok(nix::unistd::gethostname()?.to_string_lossy().into_owned())
+}
+
+/// The interface, and the name others see: `name`, or the host name.
+pub fn resolve(iface: &str, name: Option<&str>) -> io::Result<(Interface, String)> {
+    install_crypto();
     let iface = Interface::lookup(iface)?;
     let name = match name {
         Some(name) => name.to_owned(),
-        None => nix::unistd::gethostname()?.to_string_lossy().into_owned(),
+        None => host_name()?,
     };
     Ok((iface, name))
 }

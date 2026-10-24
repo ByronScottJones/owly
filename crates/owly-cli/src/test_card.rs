@@ -211,7 +211,7 @@ pub async fn run(bus: Option<&str>, args: Args) -> Result<ExitCode, String> {
     let started = Instant::now();
     let mut lease = None;
     let mut receiver = None;
-    let wifi = crate::wifi::active();
+    let wifi = owly_session::wifi::active();
     let ok = match &path {
         Path_::Omdrop => run_ok("omdrop", &["on", "forever"]).await,
         _ => match radio.acquire(0).await {
@@ -332,7 +332,7 @@ pub async fn run(bus: Option<&str>, args: Args) -> Result<ExitCode, String> {
         (Path_::Omdrop, _) => run_ok("omdrop", &["off"]).await,
         (_, Some(l)) => {
             let released = radio.release(l).await.map_err(|e| e.to_string());
-            crate::wifi::restore(wifi).await;
+            owly_session::wifi::restore(wifi).await;
             released
         }
         _ => Ok(()),
