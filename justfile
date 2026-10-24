@@ -27,8 +27,8 @@ test:
 deny:
     cargo deny check
 
-# Everything CI checks: lints, tests, portability, spec coverage, vectors, the hardware table
-ci: check test
+# Everything CI checks: lints, tests, advisories, portability, spec coverage, vectors, the hardware table
+ci: check test deny
     # The portable crates on Windows and Android (owly-awdl with its driver),
     # the AirDrop core without a runtime, and the no_std AWDL core on ESP32-C3
     cargo check --locked --target x86_64-pc-windows-msvc -p owly-awdl -p owly-airdrop --all-features
