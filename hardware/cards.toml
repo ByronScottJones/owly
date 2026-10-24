@@ -65,6 +65,13 @@ tested_on = [
 ]
 
 [[card]]
+name = "Realtek RTL8188FTV (USB)"
+driver = "rtl8xxxu"
+ids = ["0bda:f179"]
+status = "⚠️ Exclusive (opt-in)"
+tested_on = []
+
+[[card]]
 name = "Realtek RTL8852BU (USB)"
 driver = "rtw89_8852bu"
 ids = ["35bc:0108"]
