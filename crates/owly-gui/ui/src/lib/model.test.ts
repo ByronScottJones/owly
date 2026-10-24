@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { IncomingRequest, Status, TransferUpdate } from "./api";
+import type {
+  Dropped,
+  IncomingRequest,
+  SelectionInfo,
+  Status,
+  TransferUpdate,
+} from "./api";
 
 type Handler = (payload: never) => void;
 const handlers = new Map<string, Handler>();
@@ -12,8 +18,10 @@ const api = vi.hoisted(() => ({
   stopBrowse: vi.fn(),
   setVisibility: vi.fn(),
   respond: vi.fn(),
-  sendFiles: vi.fn(),
-  sendLinks: vi.fn(),
+  sendSelection: vi.fn(),
+  sendLink: vi.fn(),
+  chooseItems: vi.fn(),
+  discardSelection: vi.fn(),
   on: vi.fn(),
 }));
 
@@ -45,7 +53,7 @@ function request(id: number): IncomingRequest {
     id,
     senderName: "iPhone",
     senderModel: "iPhone15,2",
-    offer: { type: "urls", urls: ["https://example.org"] },
+    offer: { type: "urls", urls: ["https://example.org"], more: 0 },
   };
 }
 
@@ -76,8 +84,9 @@ beforeEach(() => {
     api.stopBrowse,
     api.setVisibility,
     api.respond,
-    api.sendFiles,
-    api.sendLinks,
+    api.sendSelection,
+    api.sendLink,
+    api.discardSelection,
   ]) {
     fn.mockResolvedValue(undefined);
   }
@@ -211,22 +220,89 @@ describe("Model", () => {
   });
 
   describe("sending", () => {
-    it("sends links when given links, else files", async () => {
+    it("sends a link by its text", async () => {
       const model = new Model();
-      expect(await model.send("p1", [], ["https://example.org"])).toBe(true);
-      expect(api.sendLinks).toHaveBeenCalledWith("p1", ["https://example.org"]);
-      expect(await model.send("p1", ["/a"], [])).toBe(true);
-      expect(api.sendFiles).toHaveBeenCalledWith("p1", ["/a"]);
+      expect(await model.sendLink("p1", "https://example.org")).toBe(true);
+      expect(api.sendLink).toHaveBeenCalledWith("p1", "https://example.org");
+    });
+
+    it("sends a selection by its id, never by a path", async () => {
+      const model = new Model();
+      expect(await model.sendSelection("p1", 5)).toBe(true);
+      expect(api.sendSelection).toHaveBeenCalledWith("p1", 5);
     });
 
     it("reports a refusal and says it failed", async () => {
-      api.sendFiles.mockRejectedValue({
-        kind: "invalid",
-        message: "not absolute",
+      api.sendSelection.mockRejectedValue({
+        kind: "not_found",
+        message: "gone",
       });
       const model = new Model();
-      expect(await model.send("p1", ["a"], [])).toBe(false);
-      expect(model.problem).toBe("not absolute");
+      expect(await model.sendSelection("p1", 5)).toBe(false);
+      expect(model.problem).toBe("gone");
+    });
+  });
+
+  describe("choosing", () => {
+    const picked: SelectionInfo = {
+      id: 3,
+      count: 1,
+      names: ["a.jpg"],
+      more: 0,
+    };
+
+    it("returns what the picker kept, adding to a selection when given one", async () => {
+      api.chooseItems.mockResolvedValue(picked);
+      const model = new Model();
+      expect(await model.choose(3, false)).toEqual(picked);
+      expect(api.chooseItems).toHaveBeenCalledWith(3, false);
+    });
+
+    it("gives nothing and the reason when the picker fails", async () => {
+      api.chooseItems.mockRejectedValue({
+        kind: "invalid",
+        message: "not a file",
+      });
+      const model = new Model();
+      expect(await model.choose(null, true)).toBeNull();
+      expect(model.problem).toBe("not a file");
+    });
+
+    it("lets the backend forget a selection", async () => {
+      const model = new Model();
+      await model.discard(3);
+      expect(api.discardSelection).toHaveBeenCalledWith(3);
+    });
+  });
+
+  describe("dropping files on the window", () => {
+    const dropped: Dropped = {
+      selection: { id: 8, count: 1, names: ["a.jpg"], more: 0 },
+      x: 10,
+      y: 20,
+    };
+
+    it("tracks the drag, and clears it on leaving or dropping", async () => {
+      const model = new Model();
+      await model.init();
+      emit("drag-over", { x: 5, y: 6 });
+      expect(model.drag).toEqual({ x: 5, y: 6 });
+      emit("drag-leave", null);
+      expect(model.drag).toBeNull();
+      emit("drag-over", { x: 5, y: 6 });
+      emit("files-dropped", dropped);
+      expect(model.drag).toBeNull();
+    });
+
+    it("hands a drop to whoever handles drops", async () => {
+      const model = new Model();
+      await model.init();
+      const seen: Dropped[] = [];
+      model.handleDrops((d) => seen.push(d));
+      emit("files-dropped", dropped);
+      expect(seen).toEqual([dropped]);
+      model.handleDrops(null);
+      expect(() => emit("files-dropped", dropped)).not.toThrow();
     });
   });
 });

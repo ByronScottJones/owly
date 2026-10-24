@@ -106,6 +106,7 @@ setTimeout(async () => {
           { name: "IMG_2777.jpg", kind: "public.jpeg", size: 2570000 },
           { name: "<b>not bold</b>.txt", kind: "public.plain-text", size: 120 },
         ],
+        more: 0,
       },
     });
   }

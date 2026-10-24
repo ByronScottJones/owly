@@ -23,6 +23,10 @@ check:
 test:
     cargo test --workspace --exclude owly-gui --locked
 
+# Advisories, licences, duplicate and wildcard dependencies (cargo install cargo-deny)
+deny:
+    cargo deny check
+
 # Everything CI checks: lints, tests, portability, spec coverage, vectors, the hardware table
 ci: check test
     # The portable crates on Windows and Android (owly-awdl with its driver),

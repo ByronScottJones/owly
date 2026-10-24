@@ -9,8 +9,16 @@
 //! | `transfer` | `TransferUpdate` |
 //! | `status-changed` | nothing: call `get_status` |
 //! | `note` | a line of what the session is doing |
+//! | `drag-over`, `drag-leave` | `DragPoint`: files are being dragged over the window |
+//! | `files-dropped` | `Dropped`: files were dropped; name them by `selection.id` |
+//!
+//! The frontend never names a path: what is sent is a selection the backend
+//! made from the native picker or the window's drop event.
 
 use std::time::Duration;
+
+use std::os::unix::fs::DirBuilderExt;
+use std::path::PathBuf;
 
 use owly_airdrop::driver::receiver::ReceiverEvent;
 use owly_airdrop::driver::sender::{Event, Payload};
@@ -21,14 +29,15 @@ use owly_session::radio::{self, Held};
 use owly_session::receive::{self, Settings};
 use owly_session::{Notes, RECEIVE_PORT, new_sender};
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{AppHandle, DragDropEvent, Emitter, Manager, State};
+use tauri_plugin_dialog::DialogExt;
 
 use crate::error::AppError;
 use crate::model::{
-    IncomingRequest, Peer, RadioStatus, ReceiveFailed, Received, ReceivedUrls, Status,
-    TransferState, TransferUpdate, Visibility,
+    DragPoint, Dropped, IncomingRequest, Peer, RadioStatus, ReceiveFailed, Received, ReceivedUrls,
+    SelectionInfo, Status, TransferState, TransferUpdate, Visibility, display_text,
 };
-use crate::state::{AppState, Inner, Task};
+use crate::state::{AppState, Inner, MAX_PENDING, Task};
 use crate::validate;
 
 /// How long each scan listens, and the pause before the next.
@@ -47,7 +56,8 @@ fn emit<P: Serialize + Clone>(app: &AppHandle, event: &str, payload: P) {
 
 fn notes(app: &AppHandle) -> Notes {
     let app = app.clone();
-    Notes::new(move |line| emit(&app, "note", line.to_owned()))
+    // Some notes carry what a peer called itself (SEC-4).
+    Notes::new(move |line| emit(&app, "note", display_text(line, 500)))
 }
 
 async fn build_status(state: &AppState, inner: &Inner) -> Status {
@@ -81,12 +91,13 @@ pub async fn get_status(state: State<'_, AppState>) -> Result<Status, AppError> 
 /// ending under us.
 #[tauri::command]
 pub async fn acquire_radio(app: AppHandle, state: State<'_, AppState>) -> Result<(), AppError> {
-    let mut inner = state.inner.lock().await;
-    if inner.radio.is_some() {
+    let _gate = state.radio_gate.lock().await;
+    if state.inner.lock().await.radio.is_some() {
         return Ok(());
     }
     let held = Held::acquire(state.config.bus.as_deref()).await?;
     let ended = held.watch();
+    let mut inner = state.inner.lock().await;
     inner.radio = Some(held);
     let watcher = app.clone();
     inner.radio_watch = Some(Task::new(tauri::async_runtime::spawn(async move {
@@ -108,16 +119,37 @@ pub async fn acquire_radio(app: AppHandle, state: State<'_, AppState>) -> Result
 
 #[tauri::command]
 pub async fn release_radio(app: AppHandle, state: State<'_, AppState>) -> Result<(), AppError> {
-    let mut inner = state.inner.lock().await;
-    stop_sessions(&mut inner);
-    inner.radio_watch = None;
-    let held = inner.radio.take();
-    drop(inner);
+    let _gate = state.radio_gate.lock().await;
+    let held = take_radio(&state).await;
     if let Some(held) = held {
         held.release().await?;
     }
     emit(&app, "status-changed", ());
     Ok(())
+}
+
+/// Ends the sessions and takes the lease out of the state, to give back.
+async fn take_radio(state: &AppState) -> Option<Held> {
+    let mut inner = state.inner.lock().await;
+    stop_sessions(&mut inner);
+    inner.radio_watch = None;
+    inner.radio.take()
+}
+
+/// Gives the radio back, and Wi-Fi as this user, as the window closes:
+/// owlyd ends a lease whose owner leaves the bus, but only the user's own
+/// session can bring a keyring-held Wi-Fi password back (owly_session::wifi).
+pub async fn shutdown(app: &AppHandle) {
+    let state = app.state::<AppState>();
+    let _gate = state.radio_gate.lock().await;
+    let Some(held) = take_radio(&state).await else {
+        return;
+    };
+    match tokio::time::timeout(Duration::from_secs(10), held.release()).await {
+        Ok(Ok(())) => {}
+        Ok(Err(e)) => tracing::warn!("couldn't give the radio back: {e}"),
+        Err(_) => tracing::warn!("giving the radio back took too long"),
+    }
 }
 
 /// Ends browsing and receiving, which need the link the radio gave.
@@ -126,6 +158,7 @@ fn stop_sessions(inner: &mut Inner) {
     inner.receiver = None;
     inner.pending.clear();
     inner.peers.clear();
+    inner.selections.clear();
     inner.visibility = Visibility::Off;
 }
 
@@ -183,36 +216,166 @@ pub async fn stop_browse(app: AppHandle, state: State<'_, AppState>) -> Result<(
     Ok(())
 }
 
-/// Sends files or links to a peer the last scan found; returns the
-/// transfer's id, whose progress arrives as `transfer` events.
+/// Asks the user for files or a folder with the native picker, and keeps
+/// them as a selection (or adds them to `selection`). `None` when they
+/// cancelled.
 #[tauri::command]
-pub async fn send(
+pub async fn choose_items(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    selection: Option<u64>,
+    directory: bool,
+) -> Result<Option<SelectionInfo>, AppError> {
+    let picker = app.clone();
+    let picked = tauri::async_runtime::spawn_blocking(move || {
+        let dialog = picker.dialog().file();
+        if directory {
+            dialog.blocking_pick_folder().map(|folder| vec![folder])
+        } else {
+            dialog.blocking_pick_files()
+        }
+    })
+    .await
+    .map_err(|e| AppError::Io(std::io::Error::other(e.to_string())))?;
+    let Some(picked) = picked else {
+        return Ok(None);
+    };
+    let chosen = validate::existing(picked.into_iter().filter_map(|p| p.into_path().ok()))?;
+    Ok(Some(add_to_selection(&state, selection, chosen).await))
+}
+
+async fn add_to_selection(
+    state: &AppState,
+    selection: Option<u64>,
+    chosen: Vec<PathBuf>,
+) -> SelectionInfo {
+    let mut inner = state.inner.lock().await;
+    let existing = selection.and_then(|id| inner.selections.get(&id).cloned());
+    let id = selection
+        .filter(|_| existing.is_some())
+        .unwrap_or_else(|| state.next_transfer());
+    let mut all = existing.unwrap_or_default();
+    for path in chosen {
+        if !all.contains(&path) {
+            all.push(path);
+        }
+    }
+    let info = selection_info(id, &all);
+    inner.select(id, all);
+    info
+}
+
+/// How many names of a selection the window lists.
+const SELECTION_LISTED: usize = 20;
+
+fn selection_info(id: u64, paths: &[PathBuf]) -> SelectionInfo {
+    SelectionInfo {
+        id,
+        count: paths.len(),
+        names: paths
+            .iter()
+            .take(SELECTION_LISTED)
+            .map(|p| {
+                let name = p.file_name().unwrap_or(p.as_os_str());
+                display_text(&name.to_string_lossy(), 255)
+            })
+            .collect(),
+        more: paths.len().saturating_sub(SELECTION_LISTED),
+    }
+}
+
+/// Forgets a selection that won't be sent.
+#[tauri::command]
+pub async fn discard_selection(state: State<'_, AppState>, selection: u64) -> Result<(), AppError> {
+    state.inner.lock().await.selections.remove(&selection);
+    Ok(())
+}
+
+/// Sends a selection to a peer the last scan found; returns the transfer's
+/// id, whose progress arrives as `transfer` events.
+#[tauri::command]
+pub async fn send_selection(
     app: AppHandle,
     state: State<'_, AppState>,
     peer: String,
-    paths: Vec<String>,
-    urls: Vec<String>,
+    selection: u64,
 ) -> Result<u64, AppError> {
-    let payload = match (paths.is_empty(), urls.is_empty()) {
-        (false, true) => Payload::Files(validate::paths(&paths)?),
-        (true, false) => Payload::Urls(validate::urls(&urls)?),
-        _ => return Err(AppError::Invalid("send either files or links".into())),
+    let (target, paths) = {
+        let mut inner = state.inner.lock().await;
+        let target = find_peer(&inner, &peer)?;
+        let paths = inner
+            .selections
+            .remove(&selection)
+            .ok_or_else(|| AppError::NotFound("those files are no longer chosen".into()))?;
+        (target, paths)
     };
-    let target: Listed = state
-        .inner
-        .lock()
-        .await
+    Ok(start_transfer(&app, &state, target, Payload::Files(paths)))
+}
+
+/// Sends a link to a peer the last scan found.
+#[tauri::command]
+pub async fn send_link(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    peer: String,
+    url: String,
+) -> Result<u64, AppError> {
+    let urls = validate::urls(&[url])?;
+    let target = find_peer(&*state.inner.lock().await, &peer)?;
+    Ok(start_transfer(&app, &state, target, Payload::Urls(urls)))
+}
+
+fn find_peer(inner: &Inner, id: &str) -> Result<Listed, AppError> {
+    inner
         .peers
         .iter()
-        .find(|l| l.instance == peer)
+        .find(|l| l.instance == id)
         .cloned()
-        .ok_or_else(|| AppError::NotFound("that receiver is no longer nearby".into()))?;
+        .ok_or_else(|| AppError::NotFound("that receiver is no longer nearby".into()))
+}
+
+fn start_transfer(app: &AppHandle, state: &AppState, target: Listed, payload: Payload) -> u64 {
     let id = state.next_transfer();
     let name = state.config.name.clone();
+    let app = app.clone();
     tauri::async_runtime::spawn(async move {
         run_transfer(app, id, name, target, payload).await;
     });
-    Ok(id)
+    id
+}
+
+/// What the window does with a drag over it: say where, so the page can
+/// light up a person, and on a drop keep the files as a selection.
+pub fn on_drag_drop(app: &AppHandle, event: &DragDropEvent) {
+    match event {
+        DragDropEvent::Enter { position, .. } | DragDropEvent::Over { position } => {
+            let point = DragPoint {
+                x: position.x,
+                y: position.y,
+            };
+            emit(app, "drag-over", point);
+        }
+        DragDropEvent::Drop { paths, position } => {
+            emit(app, "drag-leave", ());
+            let (app, paths, position) = (app.clone(), paths.clone(), *position);
+            tauri::async_runtime::spawn(async move {
+                match validate::existing(paths) {
+                    Ok(chosen) => {
+                        let state = app.state::<AppState>();
+                        let selection = add_to_selection(&state, None, chosen).await;
+                        let dropped = Dropped {
+                            selection,
+                            x: position.x,
+                            y: position.y,
+                        };
+                        emit(&app, "files-dropped", dropped);
+                    }
+                    Err(e) => emit(&app, "note", display_text(&e.to_string(), 500)),
+                }
+            });
+        }
+        _ => emit(app, "drag-leave", ()),
+    }
 }
 
 async fn run_transfer(app: AppHandle, id: u64, name: String, target: Listed, payload: Payload) {
@@ -297,7 +460,11 @@ async fn start_receiving(app: &AppHandle, state: &AppState) -> Result<(), AppErr
             None
         }
     };
-    std::fs::create_dir_all(&state.config.receive_dir)?;
+    // Received files are the user's own: no one else needs to list them.
+    std::fs::DirBuilder::new()
+        .recursive(true)
+        .mode(0o700)
+        .create(&state.config.receive_dir)?;
     let settings = Settings {
         name,
         dir: state.config.receive_dir.clone(),
@@ -322,12 +489,15 @@ async fn on_receiver_event(app: &AppHandle, event: ReceiverEvent) {
         ReceiverEvent::Discovered { .. } => {}
         ReceiverEvent::Request(request) => {
             let shown = IncomingRequest::new(request.id, &request.ask);
-            app.state::<AppState>()
-                .inner
-                .lock()
-                .await
-                .pending
-                .insert(request.id, request);
+            let state = app.state::<AppState>();
+            let mut inner = state.inner.lock().await;
+            if inner.pending.len() >= MAX_PENDING {
+                // Too many prompts at once: decline this one unseen.
+                request.decline();
+                return;
+            }
+            inner.pending.insert(request.id, request);
+            drop(inner);
             emit(app, "incoming-request", shown);
         }
         ReceiverEvent::Withdrawn { id } => {

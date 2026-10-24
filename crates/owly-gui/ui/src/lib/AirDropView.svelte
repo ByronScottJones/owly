@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { getCurrentWebview } from "@tauri-apps/api/webview";
   import { onMount } from "svelte";
-  import type { Peer } from "./api";
+  import type { Dropped, Peer } from "./api";
   import Avatar from "./Avatar.svelte";
   import type { Model } from "./model.svelte";
   import PersonCard from "./PersonCard.svelte";
@@ -13,7 +12,6 @@
   }
 
   let { model, onchoose }: Props = $props();
-  let hovered = $state<string | null>(null);
   let hint = $state<string | null>(null);
 
   let status = $derived(model.status);
@@ -29,25 +27,22 @@
     );
   }
 
+  let hovered = $derived(
+    model.drag ? personAt(model.drag.x, model.drag.y) : null,
+  );
+
   onMount(() => {
-    const stop = getCurrentWebview().onDragDropEvent((event) => {
-      const drag = event.payload;
-      if (drag.type === "leave") {
-        hovered = null;
-      } else if (drag.type === "over" || drag.type === "enter") {
-        hovered = personAt(drag.position.x, drag.position.y);
+    model.handleDrops((dropped: Dropped) => {
+      const target = personAt(dropped.x, dropped.y);
+      if (target) {
+        hint = null;
+        void model.sendSelection(target, dropped.selection.id);
       } else {
-        const target = personAt(drag.position.x, drag.position.y);
-        hovered = null;
-        if (target) {
-          hint = null;
-          void model.send(target, drag.paths, []);
-        } else {
-          hint = "Drop the files onto a person to send them.";
-        }
+        hint = "Drop the files onto a person to send them.";
+        void model.discard(dropped.selection.id);
       }
     });
-    return () => void stop.then((off) => off());
+    return () => model.handleDrops(null);
   });
 </script>
 

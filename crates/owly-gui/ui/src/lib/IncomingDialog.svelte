@@ -15,8 +15,8 @@
   let count = $derived(
     request
       ? request.offer.type === "files"
-        ? request.offer.files.length
-        : request.offer.urls.length
+        ? request.offer.files.length + request.offer.more
+        : request.offer.urls.length + request.offer.more
       : 0,
   );
   let noun = $derived(request?.offer.type === "urls" ? "link" : "item");
@@ -63,6 +63,9 @@
           <li><span class="file">{url}</span></li>
         {/each}
         <li class="quiet">Links are shown here, and never opened for you.</li>
+      {/if}
+      {#if request.offer.more > 0}
+        <li class="quiet">and {request.offer.more} more not listed</li>
       {/if}
     </ul>
     {#if queued > 0}

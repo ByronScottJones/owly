@@ -8,35 +8,46 @@ use crate::error::AppError;
 const MAX_ITEMS: usize = 1000;
 const MAX_URL_LEN: usize = 2048;
 
-/// The items to send, as absolute paths of existing regular files or
-/// directories, with symlinks resolved.
-pub fn paths(items: &[String]) -> Result<Vec<PathBuf>, AppError> {
+/// The items the user picked or dropped, as absolute paths of existing
+/// regular files or directories, with symlinks resolved. The paths come
+/// from the native picker or the window's drop event, never from the
+/// frontend's own say-so.
+pub fn existing(items: impl IntoIterator<Item = PathBuf>) -> Result<Vec<PathBuf>, AppError> {
+    let items: Vec<PathBuf> = items.into_iter().collect();
     if items.is_empty() || items.len() > MAX_ITEMS {
         return Err(AppError::Invalid(format!(
             "send between 1 and {MAX_ITEMS} items"
         )));
     }
     items
-        .iter()
+        .into_iter()
         .map(|item| {
-            let path = PathBuf::from(item);
-            if !path.is_absolute() {
-                return Err(AppError::Invalid(format!(
-                    "{item:?} isn't an absolute path"
-                )));
-            }
-            let path = path
+            let path = item
                 .canonicalize()
-                .map_err(|e| AppError::Invalid(format!("{item:?}: {e}")))?;
+                .map_err(|e| AppError::Invalid(format!("{}: {e}", item.display())))?;
             let kind = path.metadata()?.file_type();
             if !(kind.is_file() || kind.is_dir()) {
                 return Err(AppError::Invalid(format!(
-                    "{item:?} is neither a file nor a folder"
+                    "{} is neither a file nor a folder",
+                    item.display()
                 )));
             }
             Ok(path)
         })
         .collect()
+}
+
+/// A directory for received files: absolute, so it doesn't depend on where
+/// the app was started.
+pub fn directory(path: PathBuf) -> Result<PathBuf, AppError> {
+    if path.is_absolute() {
+        Ok(path)
+    } else {
+        Err(AppError::Invalid(format!(
+            "{} isn't an absolute path",
+            path.display()
+        )))
+    }
 }
 
 /// The links to send: `http` or `https`, and no longer than a sane URL.
@@ -82,18 +93,33 @@ mod tests {
     }
 
     #[test]
-    fn relative_and_missing_paths_are_refused() {
-        assert!(paths(&strings(&["photo.jpg"])).is_err());
-        assert!(paths(&strings(&["/no/such/owly/file"])).is_err());
-        assert!(paths(&[]).is_err());
+    fn missing_paths_are_refused() {
+        assert!(existing([PathBuf::from("/no/such/owly/file")]).is_err());
+        assert!(existing([]).is_err());
     }
 
     #[test]
-    fn an_existing_file_is_accepted_in_canonical_form() {
+    fn an_existing_directory_is_accepted_in_canonical_form() {
         let dir = std::env::temp_dir();
-        let given = dir.join(".").to_string_lossy().into_owned();
-        let got = paths(&[given]).expect("the temp dir exists");
+        let got = existing([dir.join(".")]).expect("the temp dir exists");
         assert_eq!(got, [dir.canonicalize().expect("canonical")]);
+    }
+
+    #[test]
+    fn a_socket_is_neither_file_nor_folder() {
+        let dir = std::env::temp_dir().join(format!("owly-gui-sock-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("a temp dir");
+        let path = dir.join("s");
+        let _listener = std::os::unix::net::UnixListener::bind(&path).expect("a socket");
+        let refused = existing([path]);
+        std::fs::remove_dir_all(&dir).expect("cleanup");
+        assert!(refused.is_err());
+    }
+
+    #[test]
+    fn the_receive_directory_must_be_absolute() {
+        assert!(directory(PathBuf::from("relative/dir")).is_err());
+        assert!(directory(PathBuf::from("/abs/dir")).is_ok());
     }
 
     #[test]

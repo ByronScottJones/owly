@@ -1,8 +1,5 @@
 <script lang="ts">
-  import { open } from "@tauri-apps/plugin-dialog";
-  import type { Peer } from "./api";
-  import { errorText } from "./api";
-  import { baseName } from "./format";
+  import type { Peer, SelectionInfo } from "./api";
   import type { Model } from "./model.svelte";
 
   interface Props {
@@ -14,49 +11,57 @@
   let { model, peer, onclose }: Props = $props();
   let dialog = $state<HTMLDialogElement>();
   let kind = $state<"files" | "link">("files");
-  let paths = $state<string[]>([]);
+  let selection = $state<SelectionInfo | null>(null);
   let link = $state("");
   let problem = $state<string | null>(null);
+  let sent = false;
 
   let ready = $derived(
-    kind === "files" ? paths.length > 0 : link.trim().length > 0,
+    kind === "files" ? selection !== null : link.trim().length > 0,
   );
 
   $effect(() => {
     if (peer && dialog && !dialog.open) {
       kind = "files";
-      paths = [];
+      selection = null;
       link = "";
       problem = null;
+      sent = false;
       dialog.showModal();
     }
   });
 
+  // The backend keeps what was picked; give it back if nothing was sent.
+  function closed(): void {
+    if (selection && !sent) void model.discard(selection.id);
+    selection = null;
+    onclose();
+  }
+
   async function choose(directory: boolean): Promise<void> {
     problem = null;
-    try {
-      const picked = await open({ multiple: !directory, directory });
-      const chosen =
-        picked === null ? [] : Array.isArray(picked) ? picked : [picked];
-      paths = [...new Set([...paths, ...chosen])];
-    } catch (e: unknown) {
-      problem = errorText(e);
-    }
+    const picked = await model.choose(selection?.id ?? null, directory);
+    if (picked) selection = picked;
+    problem = model.problem;
   }
 
   async function send(event: SubmitEvent): Promise<void> {
     event.preventDefault();
     if (!peer || !ready) return;
-    const sent =
-      kind === "files"
-        ? await model.send(peer.id, paths, [])
-        : await model.send(peer.id, [], [link.trim()]);
-    if (sent) dialog?.close();
-    else problem = model.problem;
+    const ok =
+      kind === "files" && selection
+        ? await model.sendSelection(peer.id, selection.id)
+        : await model.sendLink(peer.id, link.trim());
+    if (ok) {
+      sent = true;
+      dialog?.close();
+    } else {
+      problem = model.problem;
+    }
   }
 </script>
 
-<dialog bind:this={dialog} aria-labelledby="send-title" {onclose}>
+<dialog bind:this={dialog} aria-labelledby="send-title" onclose={closed}>
   {#if peer}
     <form onsubmit={send}>
       <h2 id="send-title">Send to {peer.name}</h2>
@@ -80,11 +85,14 @@
             >Add Folder…</button
           >
         </div>
-        {#if paths.length > 0}
+        {#if selection}
           <ul aria-label="Chosen items">
-            {#each paths as path (path)}
-              <li title={path}>{baseName(path)}</li>
+            {#each selection.names as name, i (i)}
+              <li>{name}</li>
             {/each}
+            {#if selection.more > 0}
+              <li class="quiet">and {selection.more} more</li>
+            {/if}
           </ul>
         {:else}
           <p class="quiet">

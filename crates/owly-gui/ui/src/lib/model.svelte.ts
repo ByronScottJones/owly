@@ -3,21 +3,26 @@
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import {
   acquireRadio,
+  chooseItems,
+  discardSelection,
   errorText,
   getStatus,
   isAppError,
   on,
   releaseRadio,
   respond,
-  sendFiles,
-  sendLinks,
+  sendLink,
+  sendSelection,
   setVisibility,
   startBrowse,
   stopBrowse,
+  type DragPoint,
+  type Dropped,
   type IncomingRequest,
   type Peer,
   type ReceiveFailed,
   type Received,
+  type SelectionInfo,
   type ReceivedUrls,
   type Status,
   type TransferUpdate,
@@ -45,8 +50,11 @@ export class Model {
   arrivals = $state<Arrival[]>([]);
   activity = $state<string[]>([]);
   busy = $state(false);
+  /** Where files are being dragged over the window, in physical pixels. */
+  drag = $state<DragPoint | null>(null);
 
   #stops: UnlistenFn[] = [];
+  #onDrop: ((dropped: Dropped) => void) | null = null;
   #timers = new Set<ReturnType<typeof setTimeout>>();
 
   /** Subscribes to the backend's events and reads its status. */
@@ -78,8 +86,19 @@ export class Model {
         }),
       ),
       on<TransferUpdate>("transfer", (u) => this.#transfer(u)),
+      on<DragPoint>("drag-over", (point) => (this.drag = point)),
+      on<null>("drag-leave", () => (this.drag = null)),
+      on<Dropped>("files-dropped", (dropped) => {
+        this.drag = null;
+        this.#onDrop?.(dropped);
+      }),
     ]);
     await this.refresh();
+  }
+
+  /** Sets what to do with files dropped on the window. */
+  handleDrops(handler: ((dropped: Dropped) => void) | null): void {
+    this.#onDrop = handler;
   }
 
   dispose(): void {
@@ -157,15 +176,46 @@ export class Model {
     }
   }
 
-  async send(peer: string, paths: string[], urls: string[]): Promise<boolean> {
+  /** Sends what the user picked or dropped, which the backend holds. */
+  async sendSelection(peer: string, selection: number): Promise<boolean> {
+    return this.#sent(() => sendSelection(peer, selection));
+  }
+
+  async sendLink(peer: string, url: string): Promise<boolean> {
+    return this.#sent(() => sendLink(peer, url));
+  }
+
+  async #sent(send: () => Promise<number>): Promise<boolean> {
     this.problem = null;
     try {
-      if (urls.length > 0) await sendLinks(peer, urls);
-      else await sendFiles(peer, paths);
+      await send();
       return true;
     } catch (e: unknown) {
       this.problem = errorText(e);
       return false;
+    }
+  }
+
+  /** Opens the native picker for files or a folder, adding to `selection`. */
+  async choose(
+    selection: number | null,
+    directory: boolean,
+  ): Promise<SelectionInfo | null> {
+    this.problem = null;
+    try {
+      return await chooseItems(selection, directory);
+    } catch (e: unknown) {
+      this.problem = errorText(e);
+      return null;
+    }
+  }
+
+  /** Lets the backend forget files that won't be sent. */
+  async discard(selection: number): Promise<void> {
+    try {
+      await discardSelection(selection);
+    } catch (e: unknown) {
+      this.problem = errorText(e);
     }
   }
 

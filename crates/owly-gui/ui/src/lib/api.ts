@@ -31,8 +31,30 @@ export interface OfferedFile {
   size: number | null;
 }
 
+/** `more` counts what the backend left out of a long offer. */
 export type IncomingOffer =
-  { type: "files"; files: OfferedFile[] } | { type: "urls"; urls: string[] };
+  | { type: "files"; files: OfferedFile[]; more: number }
+  | { type: "urls"; urls: string[]; more: number };
+
+/** What the user picked or dropped. The backend keeps the paths: the page
+ * only ever has this, and names it by `id`. */
+export interface SelectionInfo {
+  id: number;
+  count: number;
+  names: string[];
+  more: number;
+}
+
+export interface Dropped {
+  selection: SelectionInfo;
+  x: number;
+  y: number;
+}
+
+export interface DragPoint {
+  x: number;
+  y: number;
+}
 
 export interface IncomingRequest {
   id: number;
@@ -101,10 +123,20 @@ export const setVisibility = (mode: Visibility): Promise<void> =>
 export const respond = (request: number, accept: boolean): Promise<void> =>
   invoke("respond", { request, accept });
 
-export const sendFiles = (peer: string, paths: string[]): Promise<number> =>
-  invoke<number>("send", { peer, paths, urls: [] });
-export const sendLinks = (peer: string, urls: string[]): Promise<number> =>
-  invoke<number>("send", { peer, paths: [], urls });
+/** Opens the native picker; adds to `selection` when given. Null if cancelled. */
+export const chooseItems = (
+  selection: number | null,
+  directory: boolean,
+): Promise<SelectionInfo | null> =>
+  invoke<SelectionInfo | null>("choose_items", { selection, directory });
+export const discardSelection = (selection: number): Promise<void> =>
+  invoke("discard_selection", { selection });
+export const sendSelection = (
+  peer: string,
+  selection: number,
+): Promise<number> => invoke<number>("send_selection", { peer, selection });
+export const sendLink = (peer: string, url: string): Promise<number> =>
+  invoke<number>("send_link", { peer, url });
 
 /** Subscribes to a backend event; call the result to stop. */
 export function on<T>(
