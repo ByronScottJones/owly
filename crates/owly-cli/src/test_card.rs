@@ -11,8 +11,9 @@
 //! radio itself, and runs this binary's own `owly receive` and `owly send`.
 //!
 //! The report names the card, the machine it's in, the driver, kernel, mode
-//! and each step's result and timing. It holds no MAC or IP address of the
-//! router, or anything else about the network.
+//! and each step's result and timing. It holds no MAC or IP address, the
+//! router's or the card's, no interface name (a USB adapter's `wlx…` name is
+//! its MAC), not the phone's name, and nothing else about the network.
 
 use std::io::{BufRead, Write};
 use std::path::{Path, PathBuf};
@@ -55,7 +56,6 @@ struct Report {
     os: String,
     /// The maker and model, from DMI, such as `Framework Laptop 13`.
     machine: Option<String>,
-    station: Option<String>,
     driver: Option<String>,
     device: Option<String>,
     status: Option<String>,
@@ -151,7 +151,7 @@ pub async fn run(bus: Option<&str>, args: Args) -> Result<ExitCode, String> {
     let caps = doctor::report(bus).await;
     print!("{}", doctor::text(&caps));
     let s = |k: &str| caps[k].as_str().map(String::from);
-    report.station = s("station");
+    let station = s("station").unwrap_or_default();
     report.driver = s("driver");
     report.device = s("device");
     report.status = s("status");
@@ -189,7 +189,6 @@ pub async fn run(bus: Option<&str>, args: Args) -> Result<ExitCode, String> {
         Path_::None => "none",
     };
 
-    let station = report.station.clone().unwrap_or_default();
     let gateway = gateway(&station).await;
     if let Some(gw) = &gateway {
         heading("Baseline: ping the gateway for 10 s");
@@ -450,6 +449,8 @@ fn generic(value: &str) -> bool {
     .contains(&v.as_str())
 }
 
+/// Its error names the subcommand but not the rest of the arguments, which
+/// can hold the phone's name.
 async fn run_ok(program: &str, args: &[&str]) -> Result<(), String> {
     let status = Command::new(program)
         .args(args)
@@ -459,7 +460,8 @@ async fn run_ok(program: &str, args: &[&str]) -> Result<(), String> {
     if status.success() {
         Ok(())
     } else {
-        Err(format!("{program} {} exited with {status}", args.join(" ")))
+        let sub = args.first().copied().unwrap_or_default();
+        Err(format!("{program} {sub} exited with {status}"))
     }
 }
 
