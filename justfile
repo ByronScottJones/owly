@@ -107,3 +107,17 @@ readme-preview theme="dark":
     uvx grip --export --quiet --user "$(gh api user --jq .login)" --pass "$(gh auth token)" README.md "$out"
     sed -i 's|<html lang="en">|<html lang="en" data-color-mode="{{ theme }}" data-{{ theme }}-theme="{{ theme }}">|' "$out"
     xdg-open "$out"
+
+# Set the version in Cargo.toml, owly-radio's owly-awdl pin, Cargo.lock and the PKGBUILDs (pushing it releases)
+bump version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    new={{ version }}
+    [[ $new =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "not a version: $new" >&2; exit 1; }
+    old=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml)
+    sed -i "s/^version = \"$old\"$/version = \"$new\"/" Cargo.toml
+    sed -i "s/^owly-awdl = { version = \"$old\"/owly-awdl = { version = \"$new\"/" crates/owly-radio/Cargo.toml
+    sed -i -e "s/^pkgver=.*/pkgver=$new/" -e "s/^pkgrel=.*/pkgrel=1/" packaging/arch/*/PKGBUILD
+    cargo update --workspace --quiet
+    echo "$old -> $new"
+    git diff --stat
