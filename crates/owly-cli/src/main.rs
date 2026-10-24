@@ -16,7 +16,6 @@
 //!   the monitor interface of the session that's up. Takes root.
 
 mod airdrop;
-mod bluez;
 mod capture;
 mod doctor;
 mod radio;

@@ -1,0 +1,23 @@
+[package]
+name = "owly-session"
+description = "AirDrop sessions on an owly link, shared by the owly CLI and GUI."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+getrandom = "0.3"
+nix = { version = "0.31", default-features = false, features = ["hostname", "net"] }
+owly-airdrop = { path = "../owly-airdrop", features = ["mdns"] }
+owly-awdl = { path = "../owly-awdl" }
+owly-radio = { path = "../owly-radio" }
+owlyd = { path = "../owlyd" }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+tokio = { version = "1", features = ["macros", "rt", "sync", "time"] }
+zbus = { version = "5", default-features = false, features = ["tokio"] }
+
+[lints]
+workspace = true

@@ -791,6 +791,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "owly-session"
+version = "0.4.1"
+dependencies = [
+ "getrandom 0.3.4",
+ "nix",
+ "owly-airdrop",
+ "owly-awdl",
+ "owly-radio",
+ "owlyd",
+ "rustls",
+ "tokio",
+ "zbus",
+]
+
+[[package]]
 name = "owlyd"
 version = "0.4.1"
 dependencies = [
