@@ -136,6 +136,7 @@ mod tests {
         text.parse().expect("a URL")
     }
 
+    // spec: OWLY-3
     #[test]
     fn only_its_own_page_may_load() {
         assert!(may_navigate(&url("tauri://localhost/index.html")));
@@ -153,6 +154,7 @@ mod tests {
         serde_json::from_str(&text).expect("it parses")
     }
 
+    // spec: OWLY-3
     #[test]
     fn the_csp_allows_no_inline_or_eval_script() {
         let conf = json("tauri.conf.json");
@@ -177,6 +179,7 @@ mod tests {
         assert_eq!(conf["app"]["security"]["freezePrototype"], true);
     }
 
+    // spec: OWLY-4
     #[test]
     fn the_window_can_only_listen_and_call_the_listed_commands() {
         let caps = json("capabilities/default.json");
@@ -201,6 +204,7 @@ mod tests {
         );
     }
 
+    // spec: OWLY-4
     #[test]
     fn every_command_in_the_manifest_has_a_permission() {
         let build = std::fs::read_to_string(

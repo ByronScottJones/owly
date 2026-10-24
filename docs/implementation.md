@@ -38,6 +38,25 @@ Accepting Block Ack (AWDL-15) only helps where the hardware answers A-MPDUs itse
 - **MAC address (AWDL-2):** if udev or NetworkManager rewrites `awdl0`'s MAC address, peers connect to an address the interface doesn't have. `owly-radio` pins it for the session.
 - **Firewall (NET-4):** host firewalls must let TCP `8771` in from `fe80::/10` on `awdl0`. `owly-radio`'s probe warns when ufw is on, `omdrop firewall install` adds the rule, and the NixOS module opens the port.
 
+## The window
+
+`owly-gui` is a window over the same session calls as `owly receive`, `send` and `browse`, in a webview that is treated as untrusted: a defect in the page, or a script that gets into it, must not be able to read files, send anything to anyone, or reach beyond the window's own commands.
+
+**OWLY-3** (window, MUST) The page loads only the files bundled with the app. Its content security policy MUST start from `default-src 'none'` and allow no inline or `eval` script and no remote or `data:` source, and the window MUST refuse to navigate to any other page.
+
+**OWLY-4** (window, MUST) The page's permissions are listening for events and calling the app's own commands, each one allowed by name. It MUST have no dialog, file-system, shell, window or webview permission, and every command MUST need a permission of its own.
+
+**OWLY-5** (window, MUST) The page never names a path or an address. It sends a file by the id of a selection the backend holds (made by the native picker or a drop on the window; at most 8, the oldest going first), and a person by the id of the last scan. The backend MUST resolve a selection's paths to existing files or folders in canonical form, MUST require the receive folder to be absolute, and MUST accept only `http` and `https` links of at most 2048 characters and interface names of the usual form.
+
+**OWLY-6** (window, MUST) Text from the other device is shown and never acted on (SEC-4). Before it goes to the page, control characters MUST be replaced, bidirectional-override and zero-width characters dropped, and its length bounded; a request lists at most 100 of its files or links, with a count of the rest.
+
+- **Who may see this computer:** Everyone and Receiving Off. Contacts Only is listed but can't be chosen until the computer has an Apple identity (above), which Owly can't make.
+- **Pending requests:** at most 32 wait for an answer at once; a request beyond that is declined unseen. A request nobody answers is declined by the receiver after 15 s (ASK-2).
+- **One window:** a second launch raises the window that's running instead of starting another, which would fight it for the radio and port 8771.
+- **Leaving:** closing the window ends its lease on the radio and restores Wi-Fi as the user, as `owly radio up` does on Ctrl-C.
+- **Announcing and scanning:** the BLE advert (BLE-1) runs on a task of its own, since a computer with no BlueZ takes 25 s to time out activating it, and neither the first scan nor the receiver's mDNS announcements may wait for that.
+- **Tests:** `just gui-check` and `just gui-a11y` (the interface and its accessibility under WebKitGTK), `owly-session`'s `tests/session.rs` (the calls the window makes, against a fake radio on a veth pair) and `just gui-e2e` (the real window, clicked through under Xvfb).
+
 ## Testing
 
 - Fuzzing and robustness tools are never pointed at Apple devices we don't own. Current iOS and macOS `sharingd` hits a `fatalError` on an unknown HTTP path (HTTP-6), and has crashed on deeply nested XML plists and malformed HTTP framing. That takes down AirDrop, AirPlay, Handoff, Universal Clipboard and Continuity Camera on the target until `launchd` restarts it.

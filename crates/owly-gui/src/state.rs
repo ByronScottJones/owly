@@ -97,6 +97,7 @@ impl AppState {
 mod tests {
     use super::*;
 
+    // spec: OWLY-5
     #[test]
     fn the_oldest_selection_goes_first() {
         let mut inner = Inner::default();

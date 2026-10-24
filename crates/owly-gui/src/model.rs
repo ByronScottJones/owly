@@ -237,6 +237,7 @@ mod tests {
         assert_eq!(parsed, Visibility::Everyone);
     }
 
+    // spec: OWLY-6
     #[test]
     fn controls_are_replaced_and_reordering_dropped() {
         assert_eq!(display_text("a\nb\u{7}", 20), "a\u{FFFD}b\u{FFFD}");
@@ -245,6 +246,7 @@ mod tests {
         assert_eq!(display_text("a\u{200B}b\u{2066}c", 20), "abc");
     }
 
+    // spec: OWLY-6
     #[test]
     fn long_text_is_cut_with_an_ellipsis() {
         assert_eq!(display_text("abcdef", 3), "abc…");
@@ -252,6 +254,7 @@ mod tests {
         assert_eq!(display_text(&"é".repeat(1000), 255).chars().count(), 256);
     }
 
+    // spec: OWLY-6
     #[test]
     fn an_offer_is_bounded_and_counted() {
         use owly_airdrop::proto::messages::AskFile;

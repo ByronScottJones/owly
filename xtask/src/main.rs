@@ -3,6 +3,10 @@
 //! `cargo xtask hardware [--check]` writes README.md's hardware table from
 //! `hardware/` and `drivers.toml`, or checks it's current: see [`hardware`].
 //!
+//! `cargo xtask changelog [--check]` prints when each CHANGELOG entry's branch
+//! merged, from git, or checks that CHANGELOG.md and HANDOFF.md hold no git
+//! facts: see [`changelog`].
+//!
 //! `cargo xtask coverage` checks requirement coverage. It reads every
 //! requirement ID in the spec and Owly's implementation notes ([`DOCS`]),
 //! every `spec:` citation in the workspace's Rust files, and
@@ -14,6 +18,7 @@
 //! `// spec: ASK-7, HTTP-3`. A `T-*` ID stands for the requirements its row in
 //! `docs/conformance.md`'s test table lists.
 
+mod changelog;
 mod hardware;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -29,7 +34,9 @@ fn main() -> ExitCode {
         ["coverage"] => coverage(root),
         ["hardware"] => hardware::run(root, false),
         ["hardware", "--check"] => hardware::run(root, true),
-        _ => Err("usage: cargo xtask coverage | hardware [--check]".into()),
+        ["changelog"] => changelog::run(root, false),
+        ["changelog", "--check"] => changelog::run(root, true),
+        _ => Err("usage: cargo xtask coverage | hardware [--check] | changelog [--check]".into()),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,

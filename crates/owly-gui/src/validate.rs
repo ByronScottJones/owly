@@ -92,12 +92,14 @@ mod tests {
         items.iter().map(|s| (*s).to_owned()).collect()
     }
 
+    // spec: OWLY-5
     #[test]
     fn missing_paths_are_refused() {
         assert!(existing([PathBuf::from("/no/such/owly/file")]).is_err());
         assert!(existing([]).is_err());
     }
 
+    // spec: OWLY-5
     #[test]
     fn an_existing_directory_is_accepted_in_canonical_form() {
         let dir = std::env::temp_dir();
@@ -105,6 +107,7 @@ mod tests {
         assert_eq!(got, [dir.canonicalize().expect("canonical")]);
     }
 
+    // spec: OWLY-5
     #[test]
     fn a_socket_is_neither_file_nor_folder() {
         let dir = std::env::temp_dir().join(format!("owly-gui-sock-{}", std::process::id()));
@@ -116,12 +119,14 @@ mod tests {
         assert!(refused.is_err());
     }
 
+    // spec: OWLY-5
     #[test]
     fn the_receive_directory_must_be_absolute() {
         assert!(directory(PathBuf::from("relative/dir")).is_err());
         assert!(directory(PathBuf::from("/abs/dir")).is_ok());
     }
 
+    // spec: OWLY-5
     #[test]
     fn only_web_links_are_accepted() {
         assert!(urls(&strings(&["https://example.org/a?b=c"])).is_ok());
@@ -131,6 +136,7 @@ mod tests {
         assert!(urls(&[]).is_err());
     }
 
+    // spec: OWLY-5
     #[test]
     fn interface_names_are_limited() {
         assert!(interface("awdl0").is_ok());

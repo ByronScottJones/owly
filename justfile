@@ -27,7 +27,7 @@ test:
 deny:
     cargo deny check
 
-# Everything CI checks: lints, tests, advisories, portability, spec coverage, vectors, the hardware table
+# Everything CI checks: lints, tests, advisories, portability, spec coverage, vectors, the hardware table, the changelog
 ci: check test deny
     # The portable crates on Windows and Android (owly-awdl with its driver),
     # the AirDrop core without a runtime, and the no_std AWDL core on ESP32-C3
@@ -41,6 +41,8 @@ ci: check test deny
     python3 -I tests/vectors/gen_airdrop_vectors.py /dev/stdout | cmp tests/vectors/airdrop-vectors.json -
     # README's hardware table matches hardware/ and drivers.toml (`cargo xtask hardware` rewrites it)
     cargo xtask hardware --check
+    # CHANGELOG.md and HANDOFF.md hold timestamps and no commit ids, pull request numbers or merge states
+    cargo xtask changelog --check
 
 # Fuzz each network-facing parser (cargo-fuzz, nightly). Never at devices you don't own (SEC-9)
 fuzz seconds="60":
@@ -146,6 +148,10 @@ gui-dev:
 gui-build:
     npm --prefix crates/owly-gui/ui ci
     cd crates/owly-gui && ui/node_modules/.bin/tauri build --bundles deb -- --locked
+
+# When each CHANGELOG.md entry's branch merged, from git, in UTC
+changelog:
+    cargo xtask changelog
 
 # Preview README as GitHub renders it (dark by default; `just readme-preview light`)
 readme-preview theme="dark":

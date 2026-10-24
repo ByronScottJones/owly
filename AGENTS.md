@@ -1,5 +1,28 @@
 # AGENTS.md
 
+Read this file, then [ENGINEERING.md](ENGINEERING.md) (what the project must do, and how), [HANDOFF.md](HANDOFF.md) (what is left, and where to resume) and the newest entries of [CHANGELOG.md](CHANGELOG.md) (what was done, and when). This file and [README.md](README.md) never contradict ENGINEERING.md.
+
+## Agent guidance
+
+General guidance is in `~/.agents/AGENTS.md`. The topic files this project uses are copied into [agents/](agents/AGENTS.md), which is the project's own routing table; the copies are snapshots, refreshed from `~/.agents` when the source changes. None has been modified for this project. Local models: [agents/lmstudio-subagents.md](agents/lmstudio-subagents.md).
+
+| Topic | File to load |
+| --- | --- |
+| Git, branches, commits | [agents/git.md](agents/git.md) |
+| Source code in general | [agents/coding.md](agents/coding.md) |
+| Rust | [agents/rust.md](agents/rust.md), [agents/rust_style_guide.md](agents/rust_style_guide.md) |
+| The Tauri window (`crates/owly-gui`) | [agents/tauri.md](agents/tauri.md), [agents/typescript.md](agents/typescript.md), [agents/accessibility.md](agents/accessibility.md) |
+| Security and dependencies | [agents/security.md](agents/security.md), [agents/dependencies.md](agents/dependencies.md) |
+| Tests | [agents/testing.md](agents/testing.md) |
+| Markdown | [agents/markdown.md](agents/markdown.md) |
+| GitHub Actions, releases | [agents/githubactions.md](agents/githubactions.md), [agents/release.md](agents/release.md) |
+| Shell scripts, configuration, architecture | [agents/shell.md](agents/shell.md), [agents/configuration.md](agents/configuration.md), [agents/architecture.md](agents/architecture.md) |
+| Delegating to a local LM Studio model | [agents/lmstudio-subagents.md](agents/lmstudio-subagents.md) |
+
+## The window
+
+`crates/owly-gui` is a Tauri 2 app over `crates/owly-session`, which the CLI shares. The page is untrusted: it names peers only by the id of the last scan and files only by a selection the backend holds, and its capabilities are tests-enforced (`owly-gui/src/lib.rs`). Keep it that way, and change [ENGINEERING.md](ENGINEERING.md) and `docs/implementation.md` (OWLY-3 to OWLY-6) in the same change as the code. `just gui-check`, `just gui-a11y` and `just gui-e2e` are its checks.
+
 ## The spec
 
 `docs/SPEC.md` specifies the AirDrop protocol on its own, the way the vendor would write it, and Owly's crates implement it. Keep it that way:
