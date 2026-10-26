@@ -197,10 +197,15 @@ pub async fn run(bus: Option<&str>, args: Args) -> Result<ExitCode, String> {
         if let Some(p) = p {
             report.step(
                 "baseline",
-                "pass",
+                if p.received == 0 { "fail" } else { "pass" },
                 format!("{}/{} replies", p.received, p.sent),
                 None,
             );
+            if p.received == 0 {
+                println!(
+                    "  The gateway didn't answer over Wi-Fi before Owly started, so Wi-Fi after teardown can't be judged. A firewall's strict reverse path check drops the replies when Ethernet is on the same network."
+                );
+            }
         }
     } else {
         report.step("baseline", "skipped", "Wi-Fi has no default route", None);
@@ -345,6 +350,13 @@ pub async fn run(bus: Option<&str>, args: Args) -> Result<ExitCode, String> {
 
     if gateway.is_some() && args.watch == 0 {
         report.step("Wi-Fi after teardown", "skipped", "--watch 0", None);
+    } else if report.wifi.baseline.is_some_and(|p| p.received == 0) {
+        report.step(
+            "Wi-Fi after teardown",
+            "skipped",
+            "no replies in the baseline",
+            None,
+        );
     } else if let Some(gw) = &gateway {
         heading(&format!(
             "Watch Wi-Fi for {} s after teardown (Ctrl-C ends the watch early)",
