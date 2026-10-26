@@ -197,6 +197,7 @@ What Owly does on each Wi-Fi driver comes from [`crates/owly-radio/drivers.toml`
 
 - **Shared mode needs your AP on channel 6, 44 or 149.** On any other channel, the radio won't come up, and `owly doctor` says so.
 - **The firewall can block the receiver**, so the phone never sees this computer. Allow TCP 8771 on `awdl0` (Omdrop: `omdrop firewall install`).
+- **The iPhone can stop answering.** If this computer stops showing up in the iPhone's share sheet, or transfers stay on "Waiting", restart the iPhone.
 - **Exclusive mode is slow on channel 6**, where Intel cards and others that refuse a 5 GHz cell run, since AWDL there gets few of the iPhone's slots: a 2.4 MB photo takes 10–17 s on an AX201.
 
 ## How it works
