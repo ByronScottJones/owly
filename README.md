@@ -160,6 +160,8 @@ This walks you through a photo each way with an iPhone, watches Wi-Fi for five m
 
 A card with no entry in `drivers.toml` gets the `*` entry, which runs only with `allow_untested = true`. Cards that can inject frames from a monitor interface while connected to Wi-Fi are the likely candidates for shared mode. Most mac80211 drivers can, but how they behave around it varies, which is what `drivers.toml` records. To try other settings, copy the `*` entry to `/etc/owly/drivers.toml` under your driver's name (`basename $(readlink /sys/class/net/<wifi>/device/driver)`) and change it there.
 
+owlyd reads `/etc/owly/radio.toml` and `/etc/owly/drivers.toml` again for each `owly doctor` and each time the radio comes up, so changes to them need no restart.
+
 ## Modes
 
 **Shared.** Wi-Fi stays connected, and AWDL shares the AP's channel, which has to be **6, 44 or 149**. Owly injects frames through a monitor interface with the station's MAC, and advertises only the phone's slots on that channel. The station ACKs the phone's frames.
