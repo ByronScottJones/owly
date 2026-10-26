@@ -198,4 +198,5 @@ tested_on = ["`8086:2526`, Debian 13 (kernel 7.2.12)"]
 [[card]]
 name = "Intel AX210"
 driver = "iwlwifi"
+ids = ["8086:2725"]
 status = "❓ Exclusive untested"
