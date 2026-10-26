@@ -79,6 +79,13 @@ status = "✅ Exclusive (opt-in), as a second card"
 tested_on = ["USB adapter, `35bc:0108`, NixOS 26.05 (kernel 7.2.9)"]
 
 [[card]]
+name = "Intel 9260"
+driver = "iwlwifi"
+ids = ["8086:2526"]
+status = "✅ Exclusive"
+tested_on = ["`8086:2526`, Debian 13 (kernel 7.2.12)"]
+
+[[card]]
 name = "Intel 9560"
 driver = "iwlwifi"
 ids = ["8086:a370"]
@@ -98,6 +105,12 @@ driver = "iwlwifi"
 ids = ["8086:02f0"]
 status = "✅ Exclusive"
 tested_on = ["Ubuntu 24.04 (kernel 6.8)", "CachyOS (kernel 7.2.9)"]
+
+[[card]]
+name = "Intel AX210"
+driver = "iwlwifi"
+ids = ["8086:2725"]
+status = "❓ Exclusive untested"
 
 [[card]]
 name = "Intel AX211"
@@ -187,16 +200,3 @@ driver = "iwlwifi"
 ids = ["8086:24fd"]
 status = "❌ Exclusive: firmware resets about 10 s after the ad-hoc cell starts; through a hidden AP, nothing heard from the phone"
 tested_on = ["EliteBook x360 1030 G3, `8086:24fd`, Manjaro (kernel 6.12)"]
-
-[[card]]
-name = "Intel 9260"
-driver = "iwlwifi"
-ids = ["8086:2526"]
-status = "✅ Exclusive"
-tested_on = ["`8086:2526`, Debian 13 (kernel 7.2.12)"]
-
-[[card]]
-name = "Intel AX210"
-driver = "iwlwifi"
-ids = ["8086:2725"]
-status = "❓ Exclusive untested"
