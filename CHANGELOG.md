@@ -3,6 +3,18 @@
 Every unit of work, newest first, one entry per branch. An entry holds only what was known when the work was done: git has the commits, pull request and merge time (`cargo xtask changelog` prints them, in UTC, for each entry's branch), and `cargo xtask changelog --check` fails if an entry holds one of them or has no timestamp. All timestamps are ISO 8601 UTC, the time the entry was written or last updated.
 
 ---
+### fix/mdns-reencode-limit: a fuzz crash in the mDNS target
+
+- Branch: `fix/mdns-reencode-limit`, base `main`
+- Written: 2026-10-27T18:20:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner and reviewer); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - `just fuzz`, run on the VM because GitHub Actions credits ran out, found the `mdns` target crashing: a message that decodes can be heavily compressed, and `Message::encode` writes names without compression, so the re-encoded message can pass `MAX_MESSAGE` and `decode` refuses it. Owly only encodes the small messages it builds, so no code path is affected.
+  - The fuzz target now checks the round trip only when the encoding fits `MAX_MESSAGE`; `encode`'s comment says so; a unit test builds a 100-record compressed message that decodes, grows past the limit when encoded, and is then refused.
+  - Verified on the VM: fmt, clippy, spec coverage, the new test, and 3 minutes of the `mdns` target (12.3 million runs, no crash).
+- Also run locally on the VM, in place of GitHub's CI: `just ci`, `gui-check`, `gui-a11y`, `hwsim`, `gui-e2e`, `gui-build`, the `owly` and `owly-gui` `.deb`s installed with `apt` (files, `ldd`, `desktop-file-validate`), and `just fuzz 60`. The `owly-airdrop` and `owly-session` veth tests passed as a user after the owner set `kernel.apparmor_restrict_unprivileged_userns=0` on the VM.
+
+---
 ### feature/tauri-gui: a Tauri window beside the CLI
 
 - Branch: `feature/tauri-gui`, base `main`

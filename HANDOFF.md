@@ -4,10 +4,10 @@ What is left, and where to resume. Open items only; finished work is in [CHANGEL
 
 ## 1. Status
 
-- Updated: 2026-10-24T22:40:00Z
-- In flight: none. `feature/tauri-gui` completes the window (CHANGELOG.md).
-- Verified on 2026-10-24 on the Ubuntu 26.04 VM (no Wi-Fi card): format, lints, unit tests, spec coverage, `cargo deny check`, the frontend checks and accessibility scan, the portability checks, `just hwsim` and `just gui-e2e`. The veth tests of `owly-airdrop` ran as root from a copy of the binary: 19 of 26 passed, and the 7 failures only read a vectors file the namespace can't reach. They have not run as a user on the VM (H-1).
-- CI on GitHub has not run the new `gui` job, the `owly-gui` package job or its install check (H-7).
+- Updated: 2026-10-27T18:20:00Z
+- In flight: none.
+- Verified on 2026-10-27 on the Ubuntu 26.04 VM (no Wi-Fi card), in place of GitHub's CI (its credits ran out): `just ci`, `gui-check`, `gui-a11y`, `hwsim`, `gui-e2e`, `gui-build`, `just fuzz 60`, and the `owly` and `owly-gui` `.deb`s installed with `apt`. The VM runs `kernel.apparmor_restrict_unprivileged_userns=0` until it reboots.
+- GitHub's CI has not run the new `gui` and `gui-deb` jobs or the install checks on Ubuntu 22.04 and 24.04, Debian 12 and 13 and Fedora (H-7).
 
 ## 2. Resume here
 
@@ -22,19 +22,18 @@ None.
 
 | ID | Item | Why | Done when | Owner | Blocked by |
 |---|---|---|---|---|---|
-| H-1 | Allow user namespaces on the VM | `owly-airdrop`'s and `owly-session`'s veth tests re-run themselves under `unshare -rn`, which Ubuntu's AppArmor refuses | `cargo test --workspace --exclude owly-gui` passes on the VM as a user | Byron | Approval to set `kernel.apparmor_restrict_unprivileged_userns=0` (CI sets it itself) |
 | H-2 | Try the window on a real card and phone | Nothing has run against a real `owlyd` with polkit, or a real iPhone | Turn On takes the radio; the phone is listed; a file and a link go each way; closing the window gives Wi-Fi back (OWLY-3 to OWLY-6, and the leaving rule in implementation.md) | Byron | A supported card |
 | H-3 | Contacts Only | The selector lists it but refuses it until an Apple identity exists (docs/implementation.md, "Identity") | Choosing it works with an imported identity, and a test covers it | Byron | Identity import for `owly-airdrop` |
 | H-4 | Live list of people | The scan refreshes the list every ~10 s, not as devices appear | A device appearing or leaving shows within ~2 s | Claude | |
 | H-5 | Drag and drop, and the native picker | Not exercised: Xvfb has no desktop to drop from | Dropping files on a person, and Add Files and Add Folder, send them, on GNOME and KDE | Byron | A graphical session on the VM or another computer |
 | H-6 | `owly send`, `browse` and `receive` wait 25 s for BlueZ | `discover::advertise` is awaited first, and with no BlueZ on the bus D-Bus activation times out after 25 s. The window's scan no longer waits; the CLI still does | The CLI starts at once with no Bluetooth, as the window does | Claude | |
-| H-7 | The new CI jobs | Written and checked for syntax only | `ci.yml` `gui`, `linux-packages.yml` `gui-deb` and `packages.yml` pass on GitHub | Byron | Pushing the branch |
+| H-7 | The new CI jobs on GitHub | Their steps ran on the VM; the jobs themselves, and the 22.04 build and the other releases' installs, have not | `ci.yml` `gui`, `linux-packages.yml` `gui-deb` and `packages.yml` pass on GitHub | Byron | GitHub Actions credits |
 | H-8 | Review the accepted advisory | `glib` (RUSTSEC-2024-0429, via Tauri's GTK 3 bindings) is ignored in `deny.toml` with a review date | Reviewed, or Tauri's bindings moved, before 2027-01-24 | Byron | |
 | H-9 | A first-run check of ENGINEERING.md | It was written by the people who know the code | A reviewer given only ENGINEERING.md lists what they would have to guess, and the gaps are filled | Byron | |
 
 ## 5. Decisions needed
 
-- **`just gui-e2e` in CI?** It clicks fixed coordinates in a 960x600 window, so font or theme differences between runners could break it. Recommendation: keep it a local check until the `gui` job has run on GitHub a few times, then add it as its own job so it can't hide the others.
+- **`just gui-e2e` in CI?** It clicks fixed coordinates in a 960x600 window, so font or theme differences between runners could break it. Recommendation: keep it a local check until the `gui` job has run on GitHub a few times (it cannot now, for want of credits), then add it as its own job so it can't hide the others.
 - **CHANGELOG.md history.** One backfilled entry stands for everything before the window. Recommendation: leave it, since `git log --merges` has the rest.
 
 ## 6. Known issues, risks and unverified areas
