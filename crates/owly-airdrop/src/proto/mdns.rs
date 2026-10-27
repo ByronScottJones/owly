@@ -193,7 +193,9 @@ impl Message {
         Ok(message)
     }
 
-    /// Encodes without name compression, which is always valid.
+    /// Encodes without name compression, which is always valid. A message
+    /// that arrived compressed can come out longer than `MAX_MESSAGE`, which
+    /// `decode` then refuses; Owly only encodes the small ones it builds.
     pub fn encode(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(512);
         out.extend_from_slice(&self.id.to_be_bytes());
@@ -967,6 +969,30 @@ mod tests {
         let message = Message::decode(&service().announcement()).unwrap();
         assert_eq!(message.answers, service().records());
         assert_eq!(Message::decode(&message.encode()).unwrap(), message);
+    }
+
+    #[test]
+    fn compressed_names_can_outgrow_the_limit_when_encoded() {
+        // One 193-byte name in the question, then records that point at it.
+        let name: Vec<u8> = (0..3)
+            .flat_map(|_| [63].into_iter().chain([b'a'; 63]))
+            .collect();
+        let records = 100u16;
+        let mut m = vec![0, 0, 0x84, 0, 0, 1];
+        m.extend_from_slice(&records.to_be_bytes());
+        m.extend_from_slice(&[0; 4]);
+        m.extend_from_slice(&name);
+        m.extend_from_slice(&[0, 0, 99, 0, 1]);
+        for _ in 0..records {
+            // A pointer to the name, type 99, class IN, TTL 0, no data.
+            m.extend_from_slice(&[0xC0, 12, 0, 99, 0, 1, 0, 0, 0, 0, 0, 0]);
+        }
+        assert!(m.len() < MAX_MESSAGE);
+        let message = Message::decode(&m).unwrap();
+        assert_eq!(message.answers.len(), records as usize);
+        let encoded = message.encode();
+        assert!(encoded.len() > MAX_MESSAGE);
+        assert_eq!(Message::decode(&encoded), Err(Error("too long")));
     }
 
     #[test]
