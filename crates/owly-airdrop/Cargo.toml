@@ -34,7 +34,7 @@ flate2 = { version = "1.1", default-features = false, features = ["rust_backend"
 getrandom = { version = "0.3", optional = true }
 # Pure Rust, so the driver builds for any target. The application chooses
 # rustls's crypto provider.
-p256 = { version = "0.13", default-features = false, features = ["ecdsa", "pem", "pkcs8", "std"], optional = true }
+p256 = { version = "0.14", default-features = false, features = ["ecdsa", "pem", "pkcs8", "std"], optional = true }
 rcgen = { version = "0.14", default-features = false, optional = true }
 rustls = { version = "0.23", default-features = false, features = ["std", "tls12"], optional = true }
 socket2 = { version = "0.6", optional = true }

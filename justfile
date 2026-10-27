@@ -17,14 +17,18 @@ default:
 # Formatting and lints, quick enough for before each commit
 check:
     cargo fmt --all --check
-    cargo clippy --workspace --all-targets --locked -- -D warnings
+    cargo clippy --workspace --exclude owly-gui --all-targets --locked -- -D warnings
 
-# The workspace's tests
+# The workspace's tests (the GUI's are `just gui-check`)
 test:
-    cargo test --workspace --locked
+    cargo test --workspace --exclude owly-gui --locked
 
-# Everything CI checks: lints, tests, portability, spec coverage, vectors, the hardware table
-ci: check test
+# Advisories, licences, duplicate and wildcard dependencies (cargo install cargo-deny)
+deny:
+    cargo deny check
+
+# Everything CI checks: lints, tests, advisories, portability, spec coverage, vectors, the hardware table, the changelog
+ci: check test deny
     # The portable crates on Windows and Android (owly-awdl with its driver),
     # the AirDrop core without a runtime, and the no_std AWDL core on ESP32-C3
     cargo check --locked --target x86_64-pc-windows-msvc -p owly-awdl -p owly-airdrop --all-features
@@ -37,6 +41,8 @@ ci: check test
     python3 -I tests/vectors/gen_airdrop_vectors.py /dev/stdout | cmp tests/vectors/airdrop-vectors.json -
     # README's hardware table matches hardware/ and drivers.toml (`cargo xtask hardware` rewrites it)
     cargo xtask hardware --check
+    # CHANGELOG.md and HANDOFF.md hold timestamps and no commit ids, pull request numbers or merge states
+    cargo xtask changelog --check
 
 # Fuzz each network-facing parser (cargo-fuzz, nightly). Never at devices you don't own (SEC-9)
 fuzz seconds="60":
@@ -98,6 +104,55 @@ send *args="tests/photo.png":
 owly *args:
     {{ owly }} "$@"
 
+# The GUI's checks: needs Node and WebKitGTK's development packages (libwebkit2gtk-4.1-dev, libgtk-3-dev)
+[group('gui')]
+gui-check:
+    npm --prefix crates/owly-gui/ui ci
+    npm --prefix crates/owly-gui/ui run check
+    npm --prefix crates/owly-gui/ui run format
+    npm --prefix crates/owly-gui/ui test
+    npm --prefix crates/owly-gui/ui run build
+    cargo clippy -p owly-gui --all-targets --locked -- -D warnings
+    cargo test -p owly-gui --locked
+
+# axe-core against each UI state in WebKitGTK, light and dark (needs xvfb, python3-gi, python3-gi-cairo, gir1.2-webkit2-4.1)
+[group('gui')]
+gui-a11y:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd crates/owly-gui/ui
+    npm ci
+    node_modules/.bin/vite --port 1420 --strictPort >/dev/null 2>&1 &
+    # The server may already be gone when the scan ends.
+    trap 'kill $! 2>/dev/null || true' EXIT
+    sleep 3
+    xvfb-run -a python3 mock/a11y.py
+
+# The real window against a fake owlyd and a veth "phone": files and links both ways, clicked through under Xvfb (sudo; needs xvfb, xdotool, python3-gi, gir1.2-gtk-3.0)
+[group('gui')]
+gui-e2e:
+    npm --prefix crates/owly-gui/ui ci
+    npm --prefix crates/owly-gui/ui run build
+    cargo build --locked -p owlyd -p owly-cli
+    cargo build --locked -p owly-gui --features tauri/custom-protocol
+    tests/gui-e2e/run.sh
+
+# Run the GUI with live reload, taking the radio from owlyd as `owly radio up` does
+[group('gui')]
+gui-dev:
+    npm --prefix crates/owly-gui/ui ci
+    cd crates/owly-gui && ui/node_modules/.bin/tauri dev
+
+# Build the GUI's .deb (target/release/bundle/deb/)
+[group('gui')]
+gui-build:
+    npm --prefix crates/owly-gui/ui ci
+    cd crates/owly-gui && ui/node_modules/.bin/tauri build --bundles deb -- --locked
+
+# When each CHANGELOG.md entry's branch merged, from git, in UTC
+changelog:
+    cargo xtask changelog
+
 # Preview README as GitHub renders it (dark by default; `just readme-preview light`)
 readme-preview theme="dark":
     #!/usr/bin/env bash
@@ -108,7 +163,7 @@ readme-preview theme="dark":
     sed -i 's|<html lang="en">|<html lang="en" data-color-mode="{{ theme }}" data-{{ theme }}-theme="{{ theme }}">|' "$out"
     xdg-open "$out"
 
-# Set the version in Cargo.toml, owly-radio's owly-awdl pin, Cargo.lock and the PKGBUILDs (pushing it releases)
+# Set the version in Cargo.toml, owly-radio's owly-awdl pin, the GUI's config, Cargo.lock and the PKGBUILDs (pushing it releases)
 bump version:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -117,6 +172,8 @@ bump version:
     old=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml)
     sed -i "s/^version = \"$old\"$/version = \"$new\"/" Cargo.toml
     sed -i "s/^owly-awdl = { version = \"$old\"/owly-awdl = { version = \"$new\"/" crates/owly-radio/Cargo.toml
+    sed -i -e "s/^  \"version\": \"$old\"/  \"version\": \"$new\"/" -e "s/\"owly (>= $old)\"/\"owly (>= $new)\"/" crates/owly-gui/tauri.conf.json
+    sed -i "s/^  \"version\": \"$old\"/  \"version\": \"$new\"/" crates/owly-gui/ui/package.json
     sed -i -e "s/^pkgver=.*/pkgver=$new/" -e "s/^pkgrel=.*/pkgrel=1/" packaging/arch/*/PKGBUILD
     cargo update --workspace --quiet
     echo "$old -> $new"

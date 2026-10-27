@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Owly
+GenericName=AirDrop
+Comment=Send and receive files with nearby Apple devices
+Exec={{exec}}
+Icon={{icon}}
+Terminal=false
+Categories=Network;FileTransfer;
+Keywords=AirDrop;Apple;iPhone;share;
+StartupWMClass=owly-gui

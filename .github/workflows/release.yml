@@ -3,8 +3,8 @@
 # pkgver): one v<version> tag and GitHub release for them all. owly goes
 # first and makes the release, since omdrop-owl depends on it, and
 # omdrop-owl-bin last, since it adds its prebuilt tarball to the release.
-# Then the release gets owly's .deb and .rpm. After a failure, rerun it, or
-# run it from the Actions tab.
+# Then the release gets owly's .deb and .rpm, and the GUI's .deb. After a
+# failure, rerun it, or run it from the Actions tab.
 #
 # Needs the secret AUR_SSH_KEY: a private key whose public half is on the AUR
 # account that maintains the three packages.
@@ -68,6 +68,7 @@ jobs:
           missing=
           grep -q '^owly_.*\.deb$' <<< "$assets" || missing="$missing deb"
           grep -q '^owly-.*\.rpm$' <<< "$assets" || missing="$missing rpm"
+          grep -q '^owly-gui_.*\.deb$' <<< "$assets" || missing="$missing gui-deb"
           echo "$tag lacks:${missing:- nothing}"
           { echo "tag=$tag"; echo "missing=$missing"; } >> "$GITHUB_OUTPUT"
 
@@ -93,6 +94,10 @@ jobs:
           TAG: ${{ needs.owly-assets.outputs.tag }}
           MISSING: ${{ needs.owly-assets.outputs.missing }}
         run: |
-          for format in $MISSING; do
-            gh release upload "$TAG" owly[-_]*."$format"
+          for kind in $MISSING; do
+            case $kind in
+              deb) gh release upload "$TAG" owly_*.deb ;;
+              rpm) gh release upload "$TAG" owly-*.rpm ;;
+              gui-deb) gh release upload "$TAG" owly-gui_*.deb ;;
+            esac
           done

@@ -1,0 +1,47 @@
+# cargo-deny policy: `just deny`. Licences and sources are the usual
+# allow-list; an advisory is ignored only with a reason and a date to look
+# at it again.
+
+[graph]
+all-features = true
+
+[advisories]
+version = 2
+unmaintained = "workspace"
+unsound = "all"
+yanked = "deny"
+ignore = [
+    # Accepted risk, review by 2027-01-24 (owner: whoever bumps Tauri). The
+    # GUI's Tauri/wry pull in gtk-rs 0.18, which has no fixed release. The
+    # unsoundness is in glib::VariantStrIter, which no Owly or Tauri code
+    # calls, and gtk-rs 0.18 is superseded rather than patched.
+    { id = "RUSTSEC-2024-0429", reason = "gtk-rs 0.18 via tauri/wry; VariantStrIter unused; no fixed release" },
+]
+
+[licenses]
+version = 2
+allow = [
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "BSL-1.0",
+    "CC0-1.0",
+    "ISC",
+    "MIT",
+    "MPL-2.0",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "Zlib",
+]
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+# The workspace's own crates depend on each other by path.
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

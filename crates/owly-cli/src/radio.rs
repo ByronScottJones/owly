@@ -2,8 +2,8 @@
 
 use std::process::ExitCode;
 
-use crate::wifi;
 use futures_util::StreamExt;
+use owly_session::wifi;
 use owlyd::api::{self, LinkInfo, RadioProxy};
 use tokio::signal::unix::{SignalKind, signal};
 

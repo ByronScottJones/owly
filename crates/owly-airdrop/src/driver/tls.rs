@@ -119,11 +119,7 @@ struct EcKey {
 
 impl EcKey {
     fn new(key: p256::ecdsa::SigningKey) -> Self {
-        let public = key
-            .verifying_key()
-            .to_encoded_point(false)
-            .as_bytes()
-            .to_vec();
+        let public = key.verifying_key().to_sec1_point(false).as_bytes().to_vec();
         EcKey { key, public }
     }
 }

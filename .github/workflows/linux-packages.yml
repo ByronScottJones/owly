@@ -1,6 +1,7 @@
-# owly's .deb and .rpm (packaging/package.sh), as the artifacts deb and
-# rpm: for packages.yml, which installs them on each distribution release
-# they're for, and release.yml, which puts them on the GitHub release.
+# owly's .deb and .rpm (packaging/package.sh), and the GUI's .deb (tauri
+# build), as the artifacts deb, rpm and gui-deb: for packages.yml, which
+# installs them on each distribution release they're for, and release.yml,
+# which puts them on the GitHub release.
 name: Linux packages
 
 on:
@@ -48,4 +49,33 @@ jobs:
         with:
           name: rpm
           path: owly-*.rpm
+          if-no-files-found: error
+
+  # The window is its own package, owly-gui, which depends on owly.
+  gui-deb:
+    runs-on: ubuntu-latest
+    # The oldest release it is for, as the deb job does.
+    container: ubuntu:22.04
+    steps:
+      - name: Install the build tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential ca-certificates curl dpkg-dev file \
+            libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libssl-dev pkg-config
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build the package
+        run: |
+          npm --prefix crates/owly-gui/ui ci
+          cd crates/owly-gui
+          ui/node_modules/.bin/tauri build --bundles deb -- --locked
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gui-deb
+          path: target/release/bundle/deb/owly-gui_*.deb
           if-no-files-found: error

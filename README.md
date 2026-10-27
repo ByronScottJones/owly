@@ -51,6 +51,7 @@ Download the `.deb` from the [releases page](https://github.com/t4t5/owly/releas
 
 ```sh
 sudo apt install ./owly_*_amd64.deb     # Debian 12, Ubuntu 22.04 and newer
+sudo apt install ./owly-gui_*_amd64.deb # the window (optional), see below
 ```
 
 </details>
@@ -204,10 +205,29 @@ AirDrop runs over AWDL, a Wi-Fi link Apple devices use to talk to each other dir
 - **`owlyd`**, a small system service, takes over your Wi-Fi card, runs AWDL on it, and hands the resulting `awdl0` network interface to the app that asked for it. When the app is done, or crashes, owlyd gives your Wi-Fi back.
 - **AirDrop itself** (`owly receive` or Omdrop) runs as your user, not as root, and talks over `awdl0` like any other network.
 
+## The window
+
+`owly-gui` is a desktop window for the same things, laid out like AirDrop in Finder: the people nearby, a drop target for files, a prompt when someone sends you something, and "Allow me to be discovered by" at the bottom. It follows the system's light or dark theme, and has a Doctor tab with what `owly doctor` says.
+
+```sh
+owly gui          # or open Owly from the application menu
+```
+
+It's a separate package, `owly-gui`, which needs `owly` (it takes the radio from `owlyd` as `owly radio up` does, and gives it back when you close it). Only one window runs at a time; opening it again raises the first. It needs WebKitGTK 4.1, and on Linux only.
+
+- **Turn On AirDrop** takes the radio, and finds people nearby. Click a person to choose files, a folder or a link to send, or drop files onto them.
+- **Everyone** lets nearby devices see this computer and ask to send to it. **Receiving Off** hides it. **Contacts Only** is listed but can't be chosen: it needs an Apple identity, which a Linux computer can't make.
+- Received files go to `~/Downloads/Owly` unless `OWLY_RECEIVE_DIR` says otherwise. Links are shown, never opened.
+- `OWLY_IFACE` picks another interface than `awdl0`.
+
 The pieces are Rust crates you can use in other projects: `owly-awdl` (AWDL), `owly-airdrop` (AirDrop) and `owly-radio` (the Wi-Fi card on Linux). [docs/SPEC.md](docs/SPEC.md) describes the protocol they implement. To add a new kind of radio, such as an ESP32 over USB, implement `owly-awdl`'s `Air` trait if it only sends and receives Wi-Fi frames, or `owly-radio`'s `Backend` trait if it runs AWDL itself.
 
 ## Development
 
+[ENGINEERING.md](ENGINEERING.md) says what the project must do and how it's built, [HANDOFF.md](HANDOFF.md) what's left, and [CHANGELOG.md](CHANGELOG.md) what has been done; [AGENTS.md](AGENTS.md) is for agents.
+
 To try it with a phone, run `just radio` in one terminal (it installs owlyd first when it's missing or out of date), then `just receive` or `just send` in another. With no arguments, `just send` sends a test photo, `tests/photo.png`.
 
 The AirDrop tests run sender and receiver in a user network namespace (`unshare -rn`), so they need no root, but do need unprivileged user namespaces. `just install` installs a development build the way the packages lay it out, and `just uninstall` removes it. `packaging/arch/*/PKGBUILD` build packages from the checkout (`makepkg -si` there), and `packaging/package.sh deb` or `rpm` builds owly's `.deb` or `.rpm`.
+
+The window is in `crates/owly-gui` (Rust, Tauri 2) and its page in `crates/owly-gui/ui` (Svelte, TypeScript), over `crates/owly-session`, which `owly` shares. It needs Node 22 and WebKitGTK's development packages (`libwebkit2gtk-4.1-dev`, `libgtk-3-dev`); `just gui-check` runs its checks, `just gui-a11y` an axe-core scan of every state, `just gui-dev` the window with live reload, `just gui-build` its `.deb` and `just gui-e2e` the real window against a fake radio and a simulated phone.

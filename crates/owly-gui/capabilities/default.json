@@ -1,0 +1,22 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "What the main window may do: listen for the backend's events and call its own commands. It has no file-system, dialog, shell or window access of its own.",
+  "windows": ["main"],
+  "permissions": [
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "allow-get-status",
+    "allow-acquire-radio",
+    "allow-release-radio",
+    "allow-doctor",
+    "allow-start-browse",
+    "allow-stop-browse",
+    "allow-choose-items",
+    "allow-discard-selection",
+    "allow-send-selection",
+    "allow-send-link",
+    "allow-set-visibility",
+    "allow-respond"
+  ]
+}
