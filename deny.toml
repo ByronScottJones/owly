@@ -11,7 +11,10 @@ unmaintained = "workspace"
 unsound = "all"
 yanked = "deny"
 ignore = [
-    # Accepted risk, review by 2027-01-24 (owner: whoever bumps Tauri). The
+    # Accepted risk, reviewed 2026-10-27, review again by 2027-01-27 (owner:
+    # whoever bumps Tauri). Tauri 2.12.5, the latest 2.x, and the 3.0.0-alpha.5
+    # still depend on gtk-rs 0.18 (the fix is glib 0.20); 3.0's alpha adds an
+    # optional gtk4 backend. The
     # GUI's Tauri/wry pull in gtk-rs 0.18, which has no fixed release. The
     # unsoundness is in glib::VariantStrIter, which no Owly or Tauri code
     # calls, and gtk-rs 0.18 is superseded rather than patched.
