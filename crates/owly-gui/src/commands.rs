@@ -187,16 +187,8 @@ pub async fn start_browse(app: AppHandle, state: State<'_, AppState>) -> Result<
 async fn browse_loop(app: AppHandle, iface: Interface, name: String) {
     let notes = notes(&app);
     let state = app.state::<AppState>();
-    // BLE-1: wakes Apple receivers for as long as we're looking. On its own
-    // task: with no BlueZ on the bus, activating it takes 25 s to time out,
-    // and scanning must not wait for that.
-    let _advert = Task::new(tauri::async_runtime::spawn({
-        let notes = notes.clone();
-        async move {
-            let _guard = discover::advertise(false, &notes).await;
-            std::future::pending::<()>().await;
-        }
-    }));
+    // BLE-1: wakes Apple receivers for as long as we're looking.
+    let _advert = discover::advertise_in_background(false, &notes);
     loop {
         let Ok(sender) = new_sender(name.clone()) else {
             notes.say("couldn't make a sender");

@@ -46,6 +46,26 @@ pub async fn advertise(skip: bool, notes: &Notes) -> Option<Registration> {
     }
 }
 
+/// A Bluetooth advert being set up in the background, and sent until this
+/// is dropped.
+pub struct Advertising(tokio::task::JoinHandle<()>);
+
+impl Drop for Advertising {
+    fn drop(&mut self) {
+        self.0.abort();
+    }
+}
+
+/// [`advertise`] on its own task. With no BlueZ on the bus, activating it
+/// takes 25 s to time out, and browsing or sending must not wait for that.
+pub fn advertise_in_background(skip: bool, notes: &Notes) -> Advertising {
+    let notes = notes.clone();
+    Advertising(tokio::spawn(async move {
+        let _guard = advertise(skip, &notes).await;
+        std::future::pending::<()>().await;
+    }))
+}
+
 /// `/Discover` at one address until it answers or `limit` runs out. An
 /// iPhone opens its port only once our BLE advert has woken it: in legacy's
 /// run that worked, 14.8 s after the advert started. Until then it refuses
