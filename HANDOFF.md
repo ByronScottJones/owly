@@ -4,7 +4,7 @@ What is left, and where to resume. Open items only; finished work is in [CHANGEL
 
 ## 1. Status
 
-- Updated: 2026-10-27T21:30:00Z
+- Updated: 2026-10-27T21:45:00Z
 - In flight: none.
 - Verified on 2026-10-27 on the Ubuntu 26.04 VM (no Wi-Fi card), in place of GitHub's CI (its credits ran out): `just ci`, `gui-check`, `gui-a11y`, `hwsim`, `gui-e2e`, `gui-build`, `just fuzz 60`, and the `owly` and `owly-gui` `.deb`s installed with `apt`. The VM runs `kernel.apparmor_restrict_unprivileged_userns=0` until it reboots.
 - GitHub's CI has not run the new `gui` and `gui-deb` jobs or the install checks on Ubuntu 22.04 and 24.04, Debian 12 and 13 and Fedora (H-7).
@@ -26,8 +26,8 @@ None.
 | H-3 | Contacts Only | The selector lists it but refuses it until an Apple identity exists (docs/implementation.md, "Identity") | Choosing it works with an imported identity, and a test covers it | Byron | Identity import for `owly-airdrop` |
 | H-5 | Drag and drop, and the native picker | Not exercised: Xvfb has no desktop to drop from | Dropping files on a person, and Add Files and Add Folder, send them, on GNOME and KDE | Byron | A graphical session on the VM or another computer |
 | H-7 | The new CI jobs on GitHub | Their steps ran on the VM; the jobs themselves, and the 22.04 build and the other releases' installs, have not | `ci.yml` `gui`, `linux-packages.yml` `gui-deb` and `packages.yml` pass on GitHub | Byron | GitHub Actions credits |
-| H-8 | Review the accepted advisory | `glib` (RUSTSEC-2024-0429, via Tauri's GTK 3 bindings) is ignored in `deny.toml` with a review date | Reviewed, or Tauri's bindings moved, before 2027-01-24 | Byron | |
-| H-9 | A second cold read of ENGINEERING.md | The first one's gaps are filled (CHANGELOG, `docs/engineering-gaps`); the additions have not been read cold | A reviewer given only ENGINEERING.md lists nothing they would have to guess | Byron | |
+| H-8 | Review the accepted advisory | `glib` (RUSTSEC-2024-0429, via Tauri's GTK 3 bindings) is ignored in `deny.toml` with a review date (reviewed 2026-10-27: Tauri 2.12.5 and 3.0.0-alpha.5 still use gtk-rs 0.18, so nothing to move to yet) | Reviewed, or Tauri's bindings moved, before 2027-01-27 | Byron | |
+| H-9 | A first-run check of ENGINEERING.md | It was written by the people who know the code | A reviewer given only ENGINEERING.md lists what they would have to guess, and the gaps are filled | Byron | |
 
 ## 5. Decisions needed
 

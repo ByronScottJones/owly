@@ -3,6 +3,16 @@
 Every unit of work, newest first, one entry per branch. An entry holds only what was known when the work was done: git has the commits, pull request and merge time (`cargo xtask changelog` prints them, in UTC, for each entry's branch), and `cargo xtask changelog --check` fails if an entry holds one of them or has no timestamp. All timestamps are ISO 8601 UTC, the time the entry was written or last updated.
 
 ---
+
+### docs/glib-advisory-review: the accepted `glib` advisory, reviewed
+
+- Branch: `docs/glib-advisory-review`, base `main`
+- Written: 2026-10-27T21:45:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner and reviewer); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - Reviewed RUSTSEC-2024-0429 (`glib` 0.18.5, via Tauri's GTK 3 bindings; fixed in `glib` 0.20). Owly is on `tauri` 2.11.6 and `gtk` 0.18.2. The latest 2.x, 2.12.5 (needs Rust 1.90; the project's `rust-version` is 1.88), still depends on `gtk` ^0.18, and 3.0.0-alpha.5 keeps it as an optional dependency beside a new optional `gtk4`. Nothing to move to, so the ignore stays; `deny.toml` and HANDOFF.md now say so, with the next review on 2027-01-27.
+  - Checked from the crates.io and RustSec pages; no build changed.
+
 ### docs/engineering-gaps: what a cold read of ENGINEERING.md had to guess
 
 - Branch: `docs/engineering-gaps`, base `main`
