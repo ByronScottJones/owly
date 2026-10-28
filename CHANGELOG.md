@@ -3,6 +3,17 @@
 Every unit of work, newest first, one entry per branch. An entry holds only what was known when the work was done: git has the commits, pull request and merge time (`cargo xtask changelog` prints them, in UTC, for each entry's branch), and `cargo xtask changelog --check` fails if an entry holds one of them or has no timestamp. All timestamps are ISO 8601 UTC, the time the entry was written or last updated.
 
 ---
+### docs/engineering-gaps: what a cold read of ENGINEERING.md had to guess
+
+- Branch: `docs/engineering-gaps`, base `main`
+- Written: 2026-10-27T21:30:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner and reviewer); Claude, claude-sonnet-5-5 (Claude Code, implementer and the reviewer subagent)
+- What it did:
+  - A subagent given only ENGINEERING.md was asked what it would have to guess to build and run, check, add a command, change discovery and release. Each gap it named was checked against the repo before anything was written. Added to ENGINEERING.md: the prerequisites and how to build and try the CLI; what the vectors, the hardware table, the portability checks, `Held`, burst and the H-n IDs are; the steps to add a command, and the test that counts them; where the release version lives and what `release.yml` does with it, including the `AUR_SSH_KEY` secret; how the watch is tested without a radio.
+  - Not gaps, so unchanged: the permission name (`allow-<command>`) and the OWLY-n IDs were already defined, and "12 commands" is right (the table lists `start_browse` and `stop_browse` on one row).
+  - Not done: a second cold read after the additions; it needs a reviewer who hasn't seen them.
+
+---
 ### feature/live-people: the list of people updates as devices come and go
 
 - Branch: `feature/live-people`, base `fix/cli-no-bluez-wait` (the `fix/cli-no-bluez-wait` entry's change is in it)
