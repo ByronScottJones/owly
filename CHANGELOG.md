@@ -3,6 +3,19 @@
 Every unit of work, newest first, one entry per branch. An entry holds only what was known when the work was done: git has the commits, pull request and merge time (`cargo xtask changelog` prints them, in UTC, for each entry's branch), and `cargo xtask changelog --check` fails if an entry holds one of them or has no timestamp. All timestamps are ISO 8601 UTC, the time the entry was written or last updated.
 
 ---
+### feature/live-people: the list of people updates as devices come and go
+
+- Branch: `feature/live-people`, base `fix/cli-no-bluez-wait` (the `fix/cli-no-bluez-wait` entry's change is in it)
+- Written: 2026-10-27T20:30:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner and reviewer); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - The window scanned for 8 s, showed the result, paused 2 s and scanned again, so a device appeared up to ~10 s late and an mDNS goodbye was ignored. `discover::watch` runs for as long as the window browses and calls back with the whole list at each change: an mDNS answer to `/Discover` adds a device, a withdrawn or expired announcement removes it, and the radio's AWDL peers are read every 0.5 s (added when they answer, removed when the radio stops hearing them). `discover::scan` is now `watch` stopped after its limit. The window sends the page each list as it changes.
+  - Along the way the mDNS loop no longer spins if its event channel closes, which `browse_receivers` still does (not changed, used only by the CLI).
+  - Test: `owly-session`'s veth test starts the watch before the phone exists and checks the phone is listed once it starts (3 ms in the run) and unlisted once its receiver is dropped (about 1 s).
+  - Verified on the VM: fmt, clippy, `just ci`.
+  - Not checked: a real iPhone's AWDL peer coming and going (H-2), and the page itself repainting on each event (`gui-e2e`, below).
+
+---
 ### fix/cli-no-bluez-wait: the CLI no longer waits for BlueZ
 
 - Branch: `fix/cli-no-bluez-wait`, base `main`
