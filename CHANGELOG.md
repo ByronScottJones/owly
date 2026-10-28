@@ -3,6 +3,17 @@
 Every unit of work, newest first, one entry per branch. An entry holds only what was known when the work was done: git has the commits, pull request and merge time (`cargo xtask changelog` prints them, in UTC, for each entry's branch), and `cargo xtask changelog --check` fails if an entry holds one of them or has no timestamp. All timestamps are ISO 8601 UTC, the time the entry was written or last updated.
 
 ---
+### docs/rust-version-policy: when to choose and change the Rust version
+
+- Branch: `docs/rust-version-policy`, base `main`
+- Written: 2026-10-27T22:15:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner, who set the policy); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - `agents/rust.md` gains a "Rust Version" section: new projects use the latest stable unless a dependency conflicts; existing projects move to the latest stable when a dependency, fix or feature needs it, or when `rust-version` is over six months behind; how to upgrade. The six-month limit is the implementer's addition to the owner's rule, to be adjusted.
+  - The same section is to go into the global `~/.agents/rust.md`, which the owner edits; the two files already differ in line wrapping.
+  - Not applied to Owly: its `rust-version` is 1.88, which this policy would now call due for a bump. That is its own change.
+
+---
 ### feature/live-people: the list of people updates as devices come and go
 
 - Branch: `feature/live-people`, base `fix/cli-no-bluez-wait` (the `fix/cli-no-bluez-wait` entry's change is in it)
