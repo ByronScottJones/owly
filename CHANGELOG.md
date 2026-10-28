@@ -3,6 +3,17 @@
 Every unit of work, newest first, one entry per branch. An entry holds only what was known when the work was done: git has the commits, pull request and merge time (`cargo xtask changelog` prints them, in UTC, for each entry's branch), and `cargo xtask changelog --check` fails if an entry holds one of them or has no timestamp. All timestamps are ISO 8601 UTC, the time the entry was written or last updated.
 
 ---
+### fix/cli-no-bluez-wait: the CLI no longer waits for BlueZ
+
+- Branch: `fix/cli-no-bluez-wait`, base `main`
+- Written: 2026-10-27T19:30:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner and reviewer); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - `owly send` and `owly browse` awaited `discover::advertise` before looking for anyone, and with no BlueZ on the bus D-Bus activation timed out after 25 s. `discover::advertise_in_background` now sets the advert up on its own task and stops it when dropped; both commands and the window use it, so the window's own copy of that task is gone. (`owly receive` never advertised.)
+  - Verified on the VM, which has no Bluetooth: `owly browse --seconds 2` takes 2.0 s; `just ci` passes. The two userns-dependent veth suites needed `kernel.apparmor_restrict_unprivileged_userns=0` set again after the VM's reboot.
+  - Not covered by a test: it needs a D-Bus without BlueZ.
+
+---
 ### fix/mdns-reencode-limit: a fuzz crash in the mDNS target
 
 - Branch: `fix/mdns-reencode-limit`, base `main`

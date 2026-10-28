@@ -121,7 +121,7 @@ pub async fn browse(args: BrowseArgs) -> Result<ExitCode, String> {
     async {
         let notes = Notes::stderr();
         let (iface, name) = args.on.resolve()?;
-        let _advert = discover::advertise(args.no_ble, &notes).await;
+        let _advert = discover::advertise_in_background(args.no_ble, &notes);
         let sender = new_sender(name)?;
         discover::browse_receivers(
             &iface,
@@ -167,7 +167,7 @@ async fn send_inner(bus: Option<&str>, args: SendArgs) -> io::Result<ExitCode> {
         ),
         _ => return Err(io::Error::other("give either files or --url, not both")),
     };
-    let _advert = discover::advertise(no_ble, &notes).await;
+    let _advert = discover::advertise_in_background(no_ble, &notes);
     let sender = new_sender(name)?;
     let target = match mac {
         Some(mac) => {
