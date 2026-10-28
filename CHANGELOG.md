@@ -4,6 +4,16 @@ Every unit of work, newest first, one entry per branch. An entry holds only what
 
 ---
 
+### docs/rust-version-policy: when to choose and change the Rust version
+
+- Branch: `docs/rust-version-policy`, base `main`
+- Written: 2026-10-27T22:15:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner, who set the policy); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - `agents/rust.md` gains a "Rust Version" section: new projects use the latest stable unless a dependency conflicts; existing projects move to the latest stable when a dependency, fix or feature needs it, or when `rust-version` is over six months behind; how to upgrade. The six-month limit is the implementer's addition to the owner's rule, to be adjusted.
+  - The same section is to go into the global `~/.agents/rust.md`, which the owner edits; the two files already differ in line wrapping.
+  - Not applied to Owly: its `rust-version` is 1.88, which this policy would now call due for a bump. That is its own change.
+
 ### docs/glib-advisory-review: the accepted `glib` advisory, reviewed
 
 - Branch: `docs/glib-advisory-review`, base `main`
