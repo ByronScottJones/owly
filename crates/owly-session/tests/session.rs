@@ -1,7 +1,7 @@
 //! The calls the GUI makes, end to end on a veth pair and a fake radio: the
 //! radio leased from `owlyd` (served in this process on a private bus, with
 //! its fake `awdl0`), then `awdl0` (this computer) and `peer0` (a phone)
-//! sending to and receiving from each other, with the phone found by `scan`.
+//! sending to and receiving from each other, with the phone found, and lost, by `watch`.
 //!
 //! Like the veth harness of owly-airdrop (docs/conformance.md), the test
 //! re-runs itself under `unshare --user --map-root-user --net`, so it needs
@@ -111,6 +111,25 @@ async fn accept_and_collect(mut running: Running) -> Result<Vec<String>, String>
     wait.await.unwrap_or_else(|_| Err("nothing arrived".into()))
 }
 
+/// The lists the watch reports, until one satisfies `done`.
+async fn wait_for(
+    watching: &mut std::pin::Pin<&mut impl std::future::Future<Output = ()>>,
+    seen: &mut tokio::sync::mpsc::UnboundedReceiver<Vec<discover::Listed>>,
+    done: impl Fn(&[discover::Listed]) -> bool,
+) -> Vec<discover::Listed> {
+    let wait = async {
+        loop {
+            tokio::select! {
+                () = &mut *watching => panic!("the watch ended"),
+                Some(listed) = seen.recv() => if done(&listed) { return listed },
+            }
+        }
+    };
+    tokio::time::timeout(Duration::from_secs(10), wait)
+        .await
+        .expect("the list never changed as expected")
+}
+
 async fn scenario() {
     owly_session::link::install_crypto();
     let (awdl, peer) = veth();
@@ -149,7 +168,21 @@ async fn scenario() {
         .await
         .expect("the lease");
 
-    // The phone receives; the browse finds it; the GUI sends it a file.
+    // The watch starts before the phone is there, and lists it as soon as it
+    // appears (not at the end of a scan).
+    let sender = new_sender("Test Computer".into()).unwrap();
+    let (changes, mut seen) = tokio::sync::mpsc::unbounded_channel();
+    let notes = Notes::stderr();
+    let watching = discover::watch(&awdl, &sender, Some(&lease), &notes, |listed| {
+        changes.send(listed.to_vec()).ok();
+    });
+    tokio::pin!(watching);
+    tokio::select! {
+        () = &mut watching => panic!("the watch ended"),
+        () = tokio::time::sleep(Duration::from_millis(500)) => {}
+    }
+    assert!(seen.try_recv().is_err(), "listed someone before the phone");
+
     let phone_state = dir.path().join("phone-state");
     let phone_dir = dir.path().join("phone-received");
     std::fs::create_dir(&phone_dir).unwrap();
@@ -167,19 +200,19 @@ async fn scenario() {
     )
     .await
     .expect("the phone's receiver");
-    let sender = new_sender("Test Computer".into()).unwrap();
-    let listed = discover::scan(
-        &awdl,
-        &sender,
-        Some(&lease),
-        Duration::from_secs(4),
-        &Notes::stderr(),
-    )
+    let started = Instant::now();
+    let listed = wait_for(&mut watching, &mut seen, |l| {
+        l.iter().any(|l| l.name == PHONE)
+    })
     .await;
+    eprintln!(
+        "the phone was listed {:?} after it started",
+        started.elapsed()
+    );
     let target = listed
         .iter()
         .find(|l| l.name == PHONE)
-        .unwrap_or_else(|| panic!("the phone wasn't found in {listed:?}"));
+        .expect("listed, as waited for");
 
     let file = dir.path().join("photo.txt");
     std::fs::write(&file, "an owl\n").unwrap();
@@ -222,6 +255,17 @@ async fn scenario() {
     assert_eq!(
         arrived.expect("the link arrives"),
         ["https://example.org/owl"]
+    );
+
+    // The phone is gone (its receiver was dropped), and so is its entry.
+    let started = Instant::now();
+    wait_for(&mut watching, &mut seen, |l| {
+        l.iter().all(|l| l.name != PHONE)
+    })
+    .await;
+    eprintln!(
+        "the phone was unlisted {:?} after it went",
+        started.elapsed()
     );
 
     // Turning off gives the radio back.

@@ -2,7 +2,7 @@
 //!
 //! | Event | Payload |
 //! |---|---|
-//! | `peers` | `Peer[]`: everyone the last scan found |
+//! | `peers` | `Peer[]`: everyone found so far, each time someone appears or goes |
 //! | `incoming-request` | `IncomingRequest` |
 //! | `request-withdrawn` | the request's id |
 //! | `files-received`, `urls-received`, `receive-failed` | `Received`, `ReceivedUrls`, `ReceiveFailed` |
@@ -40,9 +40,8 @@ use crate::model::{
 use crate::state::{AppState, Inner, MAX_PENDING, Task};
 use crate::validate;
 
-/// How long each scan listens, and the pause before the next.
-const SCAN: Duration = Duration::from_secs(8);
-const SCAN_PAUSE: Duration = Duration::from_secs(2);
+/// How long before watching for people starts again, when it couldn't.
+const WATCH_RETRY: Duration = Duration::from_secs(5);
 
 /// The TXT flags an Everyone-mode receiver announces, as `owly receive`'s
 /// default does (MDNS-4).
@@ -197,11 +196,20 @@ async fn browse_loop(app: AppHandle, iface: Interface, name: String) {
         let lease = Lease::find(state.config.bus.as_deref(), &iface.name)
             .await
             .ok();
-        let found = discover::scan(&iface, &sender, lease.as_ref(), SCAN, &notes).await;
-        let peers: Vec<Peer> = found.iter().map(Peer::from).collect();
-        state.inner.lock().await.peers = found;
-        emit(&app, "peers", peers);
-        tokio::time::sleep(SCAN_PAUSE).await;
+        let (changes, mut lists) = tokio::sync::mpsc::unbounded_channel();
+        let watching = discover::watch(&iface, &sender, lease.as_ref(), &notes, move |found| {
+            changes.send(found.to_vec()).ok();
+        });
+        let publishing = async {
+            while let Some(found) = lists.recv().await {
+                let peers: Vec<Peer> = found.iter().map(Peer::from).collect();
+                state.inner.lock().await.peers = found;
+                emit(&app, "peers", peers);
+            }
+        };
+        // `changes` lives in `watching`, so the list ends with it.
+        tokio::join!(watching, publishing);
+        tokio::time::sleep(WATCH_RETRY).await;
     }
 }
 

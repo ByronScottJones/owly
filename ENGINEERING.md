@@ -76,7 +76,7 @@ Each is allowed by a permission named `allow-<command>` (`crates/owly-gui/build.
 | `acquire_radio` | | | Leases the radio from owlyd (polkit may ask); watches for the lease ending. |
 | `release_radio` | | | Gives it back and stops browsing and receiving. |
 | `doctor` | | JSON | The report of `owly doctor --json`. |
-| `start_browse`, `stop_browse` | | | Starts or stops the scan loop (8 s scan, 2 s pause) and the BLE advert. |
+| `start_browse`, `stop_browse` | | | Starts or stops the watch for people and the BLE advert. |
 | `choose_items` | `selection: id or null`, `directory: bool` | `SelectionInfo` or null | The native picker; adds to a selection or makes one. Null if cancelled. |
 | `discard_selection` | `selection` | | Forgets a selection. |
 | `send_selection` | `peer`, `selection` | transfer id | Sends the selection's files to a person from the last scan. |
@@ -112,7 +112,7 @@ Each is allowed by a permission named `allow-<command>` (`crates/owly-gui/build.
 ## 5. Behaviour
 
 - **Turn on:** `acquire_radio` leases owlyd's radio with duration 0 (until released). `start_browse` follows; `set_visibility(everyone)` starts the receiver on the leased link, announcing in the bursts the radio asks for (OWLY-1).
-- **Scan:** every 8 s (then a 2 s pause): mDNS browse of `_airdrop._tcp` on the link, plus, on a lease, `/Discover` at each AWDL peer the radio hears (DISC-5). One entry per instance; the page shows the list of the last scan. A device that goes away disappears at the next scan.
+- **Watch:** runs while the window is on: mDNS browse of `_airdrop._tcp` on the link, plus, on a lease, `/Discover` at each AWDL peer the radio hears, read every 0.5 s (DISC-5). A device is listed when it answers `/Discover` with a name, and unlisted when its mDNS announcement is withdrawn or expires, or the radio stops hearing the peer. One entry per instance; each change sends the page the whole list. If neither source can be watched, it tries again after 5 s.
 - **Send:** the page names a person by id and a selection by id; the backend looks both up, starts a transfer task and emits `transfer` updates. A selection is dropped when sent or discarded.
 - **Receive:** each request is shown with its sender, model and a bounded list of items, with Decline focused first. Accept starts the transfer into the receive folder; the page then shows what arrived. Links are shown with a Copy button.
 - **Leaving:** on exit the app prevents the exit once, releases the radio, restores Wi-Fi (NetworkManager connections that were active when it started), then exits.

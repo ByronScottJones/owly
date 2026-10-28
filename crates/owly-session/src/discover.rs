@@ -16,7 +16,7 @@ use crate::ids::{AIRDROP_PORT, random_tag};
 use crate::link::{Interface, Lease};
 
 /// A receiver that answered `/Discover` with a name.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Listed {
     pub instance: String,
     pub name: String,
@@ -246,6 +246,15 @@ pub async fn browse_receivers(
     }
 }
 
+/// How often the radio's AWDL peers are read again.
+const PEER_POLL: Duration = Duration::from_millis(500);
+
+/// A change to the list of receivers.
+enum Change {
+    Add(Listed),
+    Remove(String),
+}
+
 /// Every receiver that answers within `limit`, by mDNS and, on an owlyd
 /// lease, by `/Discover` at the radio's AWDL peers (DISC-5), one entry per
 /// instance.
@@ -256,55 +265,148 @@ pub async fn scan(
     limit: Duration,
     notes: &Notes,
 ) -> Vec<Listed> {
-    let found = std::sync::Mutex::new(Vec::<Listed>::new());
-    let add = |listed: &Listed| {
+    let found = std::sync::Mutex::new(Vec::new());
+    let watching = watch(iface, sender, lease, notes, |listed| {
         // A poisoned list only means another listing panicked half-way.
-        let mut found = found.lock().unwrap_or_else(|e| e.into_inner());
-        if !found.iter().any(|l| l.instance == listed.instance) {
-            found.push(listed.clone());
-        }
-        false
-    };
-    let by_mdns = async {
-        if let Err(e) = browse_receivers(iface, sender, limit, add, notes).await {
-            notes.say(format!("not browsing mDNS: {e}"));
-        }
-    };
-    let by_peers = async {
-        let Some(lease) = lease else { return };
-        let deadline = tokio::time::Instant::now() + limit;
-        let mut seen = std::collections::HashSet::new();
-        while tokio::time::Instant::now() < deadline {
-            for mac in lease.peers().await {
-                if !seen.insert(mac) {
-                    continue;
-                }
-                let addr = SocketAddrV6::new(mac.link_local(), AIRDROP_PORT, 0, iface.index);
-                let wait = deadline
-                    .saturating_duration_since(tokio::time::Instant::now())
-                    .min(Duration::from_secs(3));
-                if let Ok(Ok(Some(receiver))) =
-                    tokio::time::timeout(wait, sender.discover(addr)).await
-                {
-                    let mut found = found.lock().unwrap_or_else(|e| e.into_inner());
-                    let instance = mac.to_string();
-                    if !found.iter().any(|l| l.instance == instance) {
-                        found.push(Listed {
-                            instance,
-                            name: receiver.computer_name,
-                            addr,
-                            // UP-1b: no TXT to say, and Apple receivers take DVZip.
-                            flags: RECEIVER_FLAGS | SUPPORTS_DVZIP,
-                        });
+        *found.lock().unwrap_or_else(|e| e.into_inner()) = listed.to_vec();
+    });
+    // The watch has no end of its own; the limit is what stops it.
+    let _ = tokio::time::timeout(limit, watching).await;
+    found.into_inner().unwrap_or_else(|e| e.into_inner())
+}
+
+/// Calls `on_change` with the whole list each time a receiver appears,
+/// changes or goes: when mDNS announces or withdraws it, or when the radio
+/// hears an AWDL peer answer `/Discover` or fall silent. Runs until dropped,
+/// or until neither source can be watched.
+pub async fn watch(
+    iface: &Interface,
+    sender: &Sender,
+    lease: Option<&Lease>,
+    notes: &Notes,
+    mut on_change: impl FnMut(&[Listed]),
+) {
+    let (changes, mut incoming) = tokio::sync::mpsc::unbounded_channel();
+    let by_mdns = watch_mdns(iface, sender, changes.clone(), notes);
+    let by_peers = watch_peers(iface, sender, lease, changes);
+    let apply = async {
+        let mut listed = Vec::<Listed>::new();
+        while let Some(change) = incoming.recv().await {
+            let changed = match change {
+                Change::Add(new) => match listed.iter_mut().find(|l| l.instance == new.instance) {
+                    Some(old) if *old == new => false,
+                    Some(old) => {
+                        *old = new;
+                        true
                     }
-                } else {
-                    // Not answering yet: an iPhone may open its port later.
-                    seen.remove(&mac);
+                    None => {
+                        listed.push(new);
+                        true
+                    }
+                },
+                Change::Remove(instance) => {
+                    let before = listed.len();
+                    listed.retain(|l| l.instance != instance);
+                    listed.len() != before
+                }
+            };
+            if changed {
+                on_change(&listed);
+            }
+        }
+    };
+    tokio::join!(by_mdns, by_peers, apply);
+}
+
+/// BROWSING and DISCOVERING (§8.1) for [`watch`]: an instance is added once
+/// it answers `/Discover` with a name (DISC-1), and removed when its
+/// announcement is withdrawn or expires.
+async fn watch_mdns(
+    iface: &Interface,
+    sender: &Sender,
+    changes: tokio::sync::mpsc::UnboundedSender<Change>,
+    notes: &Notes,
+) {
+    let mut browse = match Mdns::new(iface.index).browse().await {
+        Ok(browse) => browse,
+        Err(e) => {
+            notes.say(format!("not browsing mDNS: {e}"));
+            return;
+        }
+    };
+    while let Some(event) = browse.events.recv().await {
+        let change = match event {
+            BrowseEvent::Found(found) => {
+                let addr = SocketAddrV6::new(found.addr, found.port, 0, iface.index);
+                match sender.discover(addr).await {
+                    Ok(Some(receiver)) => Change::Add(Listed {
+                        instance: found.instance,
+                        name: receiver.computer_name,
+                        addr,
+                        flags: found.flags,
+                    }),
+                    Ok(None) => {
+                        notes.say(format!("{} doesn't list us", found.instance));
+                        Change::Remove(found.instance)
+                    }
+                    Err(e) => {
+                        notes.say(format!("{}: /Discover failed: {e}", found.instance));
+                        continue;
+                    }
                 }
             }
-            tokio::time::sleep(Duration::from_millis(500)).await;
+            BrowseEvent::Lost(instance) => Change::Remove(instance),
+        };
+        if changes.send(change).is_err() {
+            return;
         }
-    };
-    tokio::join!(by_mdns, by_peers);
-    found.into_inner().unwrap_or_else(|e| e.into_inner())
+    }
+}
+
+/// `/Discover` at the radio's AWDL peers (DISC-5) for [`watch`]. The list
+/// is read again each round: peers come and go, and an iPhone changes its
+/// AWDL address and may open its port only later. One that answers is added;
+/// one the radio stops hearing is removed.
+async fn watch_peers(
+    iface: &Interface,
+    sender: &Sender,
+    lease: Option<&Lease>,
+    changes: tokio::sync::mpsc::UnboundedSender<Change>,
+) {
+    let Some(lease) = lease else { return };
+    let mut answered = std::collections::HashSet::new();
+    loop {
+        let heard = lease.peers().await;
+        for mac in answered.clone() {
+            if !heard.contains(&mac) {
+                answered.remove(&mac);
+                if changes.send(Change::Remove(mac.to_string())).is_err() {
+                    return;
+                }
+            }
+        }
+        for mac in heard {
+            if answered.contains(&mac) {
+                continue;
+            }
+            let addr = SocketAddrV6::new(mac.link_local(), AIRDROP_PORT, 0, iface.index);
+            // A peer that refuses fails at once; one that's silent mustn't
+            // hold up the others for long.
+            let probe = tokio::time::timeout(Duration::from_secs(3), sender.discover(addr));
+            if let Ok(Ok(Some(receiver))) = probe.await {
+                answered.insert(mac);
+                let listed = Listed {
+                    instance: mac.to_string(),
+                    name: receiver.computer_name,
+                    addr,
+                    // UP-1b: no TXT to say, and Apple receivers take DVZip.
+                    flags: RECEIVER_FLAGS | SUPPORTS_DVZIP,
+                };
+                if changes.send(Change::Add(listed)).is_err() {
+                    return;
+                }
+            }
+        }
+        tokio::time::sleep(PEER_POLL).await;
+    }
 }
