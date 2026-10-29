@@ -3,6 +3,16 @@
 Every unit of work, newest first, one entry per branch. An entry holds only what was known when the work was done: git has the commits, pull request and merge time (`cargo xtask changelog` prints them, in UTC, for each entry's branch), and `cargo xtask changelog --check` fails if an entry holds one of them or has no timestamp. All timestamps are ISO 8601 UTC, the time the entry was written or last updated.
 
 ---
+### fix/ci-install-cargo-deny: `cargo deny` missing from the CI runner
+
+- Branch: `fix/ci-install-cargo-deny`, base `main`
+- Written: 2026-10-29T14:15:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner and reviewer); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - `just ci` runs `cargo deny check` (added with the window), but the `check` job installed only `just`, so on GitHub it failed with "no such command: `deny`". It had not run there before: the window's branch was verified on the VM while Actions credits were out. `ci.yml` now installs `cargo-deny` beside `just`. The first run on `main` after the Rust 1.98 bump failed this way, with `gui`, `hwsim`, `fuzz` and the Packages workflow passing.
+  - Not checked until it runs on GitHub: whether anything after `cargo deny` in `just ci` also needs a tool the runner lacks (the VM has them all).
+
+---
 ### chore/rust-1.98: the minimum Rust version, 1.88 to 1.98
 
 - Branch: `chore/rust-1.98`, base `main`
