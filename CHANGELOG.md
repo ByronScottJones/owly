@@ -13,6 +13,14 @@ Every unit of work, newest first, one entry per branch. An entry holds only what
   - `release.yml` is unchanged: it starts on a version bump (a `PKGBUILD` change on `main`) and its release jobs run only on the upstream repository.
   - ENGINEERING.md section 10 says so; nothing now guards `main` automatically, so `just ci` and the window's checks go on the VM before a merge, and the workflows are started by hand before a release.
   - Not checked: that `workflow_dispatch` shows the two workflows in the Actions tab; that is visible once this is on `main`.
+### docs/close-h7: the new CI jobs have run on GitHub
+
+- Branch: `docs/close-h7`, base `main`
+- Written: 2026-10-29T14:49:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner and reviewer); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - Closes H-7 in HANDOFF.md. With Actions credits back, GitHub's CI passed on `main` after the `cargo-deny` fix: `ci.yml` (`check`, `gui`, `fuzz`, `hwsim`) and `packages.yml` (Nix, AUR, `.deb`, `.rpm`, `gui-deb`, and the install checks on Ubuntu 22.04 and 24.04, Debian 12 and 13, and Fedora 44). The Nix job building with `rust-version = "1.98"` also confirms that choice.
+  - The decision about `just gui-e2e` in CI no longer says CI cannot run it.
 
 ---
 ### fix/ci-install-cargo-deny: `cargo deny` missing from the CI runner
