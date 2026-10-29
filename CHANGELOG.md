@@ -17,6 +17,24 @@ Every unit of work, newest first, one entry per branch. An entry holds only what
   - Also fixed: the `urls-received` event sent the page the links unsanitised, while the incoming prompt sanitised them (OWLY-6). They are now sanitised, bounded to 100 and counted, as the prompt's are.
   - Verified on the VM, on Rust 1.99.1: `gui-check` (31 Rust tests, the page's tests, svelte-check, Prettier, clippy), `gui-a11y` (12 states in 2 themes, including the links card and the preferences), `gui-e2e`.
   - Not exercised: the confirmation dialog and the browser opening (they need a graphical session), and the incoming prompt, which does not yet mark non-ASCII links (the alert is on the received card).
+### docs/engineering-gaps-2: the second cold read of ENGINEERING.md
+
+- Branch: `docs/engineering-gaps-2`, base `main`
+- Written: 2026-10-29T15:35:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner and reviewer); Claude, claude-sonnet-5-5 (Claude Code, implementer and the reviewer subagent)
+- What it did:
+  - A second subagent, given only ENGINEERING.md, listed what it would still guess. The facts were checked against the repo and added: the apt packages and where `just`, Rust and Node come from; that `just install` builds and that owlyd starts on demand; how to run the window; how to run `owly-session`'s veth test and what it needs; the format of a CHANGELOG entry (pointer), what "upstream" is, where `AUR_SSH_KEY` comes from; that checks run before a merge and the owner merges; where the command count appears (three places); one-line meanings of AWDL, lease, polkit, the BLE advert, Everyone and Contacts Only, hwsim, the fake radio, `ghx` and omdrop-owl.
+  - The one contradiction it found is settled by the owner: docs/implementation.md, "The window", is the authority for OWLY-3 to OWLY-6, and ENGINEERING.md says so (line 7 and section 2), with OWLY-5's "canonical form" added to match. Still open: who approves a loosening of those rules (H-9), and whether `gui-e2e` is a merge requirement (HANDOFF section 5).
+  - Not done: a third read. The remaining gaps are decisions, not missing facts.
+### chore/aur-publish-off: no publishing to the AUR until there is a key
+
+- Branch: `chore/aur-publish-off`, base `main`
+- Written: 2026-10-29T15:41:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner, who asked for it); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - `aur-release.yml` publishes to the AUR only when the repository variable `AUR_PUBLISH` is `true`. Unset (as now), a release still tags, builds the packages and attaches the files, and the publish step is replaced by a notice. The "`AUR_SSH_KEY` isn't set" failure applies only when publishing is on. To turn it on later: add the `AUR_SSH_KEY` secret, then set the variable (`ghx variable set AUR_PUBLISH --body true`).
+  - This changes nothing today: the release jobs already run only on `t4t5/owly`, not on this fork. The switch is for a release made from a repository that has no key yet.
+  - Not tested: the workflow has not run (it cannot here). The YAML parses, and the conditions were read against the step outputs.
 
 ---
 ### docs/handoff-manual-ci: HANDOFF.md says CI is manual

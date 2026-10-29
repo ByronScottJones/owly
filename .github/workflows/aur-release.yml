@@ -1,8 +1,9 @@
 # One package's release, for release.yml: build the AUR's PKGBUILD
 # (packaging/arch/aur.sh), tag v<pkgver> with a GitHub release (if that tag
 # is new: the first package of a version makes it, and a pkgrel bump reuses
-# it), and publish it to the AUR. A version the AUR already has does
-# nothing. omdrop-owl-bin adds the prebuilt tarball it installs to the
+# it), and publish it to the AUR, only when the repository variable
+# AUR_PUBLISH is 'true' (there is no AUR key yet). A version the AUR already
+# has does nothing. omdrop-owl-bin adds the prebuilt tarball it installs to the
 # release.
 name: AUR release
 
@@ -31,6 +32,7 @@ jobs:
         id: version
         env:
           AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+          AUR_PUBLISH: ${{ vars.AUR_PUBLISH }}
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           pkgbuild=packaging/arch/$PKG/PKGBUILD
@@ -45,7 +47,7 @@ jobs:
             exit 0
           fi
           # Fail before tagging anything that couldn't then be published.
-          if [ -z "$AUR_SSH_KEY" ]; then
+          if [ "$AUR_PUBLISH" = true ] && [ -z "$AUR_SSH_KEY" ]; then
             echo "::error::The AUR_SSH_KEY secret isn't set."
             exit 1
           fi
@@ -115,8 +117,13 @@ jobs:
             gh release upload "$TAG" "/tmp/pkgs/$tarball"
           fi
 
+      - name: Not publishing to the AUR
+        if: steps.version.outputs.release == 'true' && vars.AUR_PUBLISH != 'true'
+        run: |
+          echo "::notice::Not publishing $PKG to the AUR, because the repository variable AUR_PUBLISH isn't 'true'."
+
       - name: Publish to the AUR
-        if: steps.version.outputs.release == 'true'
+        if: steps.version.outputs.release == 'true' && vars.AUR_PUBLISH == 'true'
         env:
           AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
         run: |
