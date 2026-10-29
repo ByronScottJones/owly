@@ -4,7 +4,7 @@ What is left, and where to resume. Open items only; finished work is in [CHANGEL
 
 ## 1. Status
 
-- Updated: 2026-10-27T21:45:00Z
+- Updated: 2026-10-29T13:47:00Z
 - In flight: none.
 - Verified on 2026-10-27 on the Ubuntu 26.04 VM (no Wi-Fi card), in place of GitHub's CI (its credits ran out): `just ci`, `gui-check`, `gui-a11y`, `hwsim`, `gui-e2e`, `gui-build`, `just fuzz 60`, and the `owly` and `owly-gui` `.deb`s installed with `apt`. The VM runs `kernel.apparmor_restrict_unprivileged_userns=0` until it reboots.
 - GitHub's CI has not run the new `gui` and `gui-deb` jobs or the install checks on Ubuntu 22.04 and 24.04, Debian 12 and 13 and Fedora (H-7).
@@ -36,6 +36,7 @@ None.
 
 ## 6. Known issues, risks and unverified areas
 
+- `npm audit` reports 2 low advisories (`deepmerge`, via `@sveltejs/vite-plugin-svelte`) with no fix yet; recheck when the plugin updates.
 - The page has not been checked against a screen reader, only against axe-core.
 - The popup of the visibility menu is drawn by GTK, not the page, so it does not follow the page's accent colour.
 - The `.deb` depends on `libwebkit2gtk-4.1-0`, which Debian 12 and Ubuntu 22.04 and newer have. It was checked only by `dpkg -I` and on the VM, not installed on those releases.

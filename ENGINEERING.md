@@ -219,17 +219,17 @@ Rust 2024 edition, 1.98 or newer; the workspace is `resolver = "3"`. Node 22 for
 
 | Dependency | Where | Why |
 |---|---|---|
-| `tauri` 2.11 | owly-gui | The window and IPC. 2.12 needs Rust 1.90, which the workspace now has; the move to it is not done, so the npm packages stay pinned to `~2.11.0`, which Tauri checks. |
+| `tauri` 2.12 | owly-gui | The window and IPC. The npm packages are pinned to `~2.12.0`, because Tauri checks that their minor version matches the crate's. 2.12 needs Rust 1.90. |
 | `tauri-plugin-dialog` 2 | owly-gui | The native file picker, called by the backend only; the page has no dialog permission. |
 | `tauri-plugin-single-instance` 2 | owly-gui | GUI-3. |
 | `thiserror` 2, `serde`, `serde_json`, `url`, `tracing`, `tokio` | owly-gui | Errors, payloads, link validation, logs, async. |
 | `zbus` 5, `nix` 0.31, `futures-util`, `getrandom` | owly-session | The D-Bus lease, interface lookup, tag generation. |
 | `owly-airdrop`, `owly-awdl`, `owly-radio`, `owlyd` | owly-session | The protocol, AWDL, the radio and its API. |
 | `p256` 0.14, `rcgen` 0.14, `rustls` 0.23 (ring) | owly-airdrop | The receiver's self-signed identity and TLS (TLS-*). `p256` 0.14 is the first with `crypto-bigint` 0.7.7 (RUSTSEC-2026-0387). |
-| `svelte` 5, `vite` 8, `typescript` 5.9, `@tauri-apps/api` ~2.11 | `ui/` | The page. |
+| `svelte` 5, `vite` 8, `typescript` 5.9, `@tauri-apps/api` ~2.12 | `ui/` | The page. |
 | `vitest` 5, `svelte-check`, `prettier`, `axe-core` | `ui/` (dev) | Component and model tests, type checks, formatting, accessibility. |
 
-Every crate's licence is on `deny.toml`'s allow-list; `cargo deny check` and `npm audit` pass (0 vulnerabilities on 2026-10-24).
+Every crate's licence is on `deny.toml`'s allow-list; `cargo deny check` passes. `npm audit` reported 0 vulnerabilities on 2026-10-24 and 2 low ones on 2026-10-29 (`deepmerge` prototype poisoning, via `@sveltejs/vite-plugin-svelte`, no fix available; both packages are dev-only in `package-lock.json`, so neither is in the page that ships).
 
 ## 10. Build, run, test and release
 
