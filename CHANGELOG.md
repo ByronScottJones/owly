@@ -3,6 +3,18 @@
 Every unit of work, newest first, one entry per branch. An entry holds only what was known when the work was done: git has the commits, pull request and merge time (`cargo xtask changelog` prints them, in UTC, for each entry's branch), and `cargo xtask changelog --check` fails if an entry holds one of them or has no timestamp. All timestamps are ISO 8601 UTC, the time the entry was written or last updated.
 
 ---
+### chore/ci-manual-only: GitHub CI runs only when started by hand
+
+- Branch: `chore/ci-manual-only`, base `main`
+- Written: 2026-10-29T15:22:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner, who chose manual-only runs); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - `ci.yml` and `packages.yml` start only with `workflow_dispatch`, not on every pull request push and merge to `main`. Each run had cost about 17 min (CI) and 30 min (Packages) of runner time, twice per pull request. This is what `agents/githubactions.md` already asks for ("Manual by Default").
+  - `release.yml` is unchanged: it starts on a version bump (a `PKGBUILD` change on `main`) and its release jobs run only on the upstream repository.
+  - ENGINEERING.md section 10 says so; nothing now guards `main` automatically, so `just ci` and the window's checks go on the VM before a merge, and the workflows are started by hand before a release.
+  - Not checked: that `workflow_dispatch` shows the two workflows in the Actions tab; that is visible once this is on `main`.
+
+---
 ### fix/ci-install-cargo-deny: `cargo deny` missing from the CI runner
 
 - Branch: `fix/ci-install-cargo-deny`, base `main`
