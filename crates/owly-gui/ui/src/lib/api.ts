@@ -42,7 +42,7 @@ export interface OfferedFile {
 /** `more` counts what the backend left out of a long offer. */
 export type IncomingOffer =
   | { type: "files"; files: OfferedFile[]; more: number }
-  | { type: "urls"; urls: string[]; more: number };
+  | { type: "urls"; links: ReceivedLink[]; more: number };
 
 /** What the user picked or dropped. The backend keeps the paths: the page
  * only ever has this, and names it by `id`. */
@@ -94,6 +94,8 @@ export interface ReceivedLink {
   /** Code points like "U+0430" of characters that are not printable ASCII. */
   nonAscii: string[];
   nonAsciiCount: number;
+  /** A label of the host starts with "xn--" (an internationalised name). */
+  punycode: boolean;
 }
 
 export interface ReceivedUrls {

@@ -7,7 +7,7 @@ import {
   hueOf,
   initials,
   isFinished,
-  oddCharacters,
+  linkWarnings,
   percent,
   transferLabel,
 } from "./format";
@@ -126,21 +126,23 @@ describe("describeStation", () => {
   });
 });
 
-describe("oddCharacters", () => {
+describe("linkWarnings", () => {
+  const plain = {
+    text: "https://example.org",
+    nonAscii: [],
+    nonAsciiCount: 0,
+    punycode: false,
+  };
+
   // spec: OWLY-7
   it("says nothing about a plain ASCII link", () => {
-    expect(
-      oddCharacters({
-        text: "https://example.org",
-        nonAscii: [],
-        nonAsciiCount: 0,
-      }),
-    ).toBeNull();
+    expect(linkWarnings(plain)).toEqual([]);
   });
 
   // spec: OWLY-7
   it("names the characters and says the address may be imitating another", () => {
-    const warning = oddCharacters({
+    const [warning] = linkWarnings({
+      ...plain,
       text: "https://exаmple.org",
       nonAscii: ["U+0430"],
       nonAsciiCount: 1,
@@ -152,12 +154,19 @@ describe("oddCharacters", () => {
 
   it("says when more were left out", () => {
     const names = Array.from({ length: 8 }, (_, i) => `U+${4e3 + i}`);
-    const warning = oddCharacters({
-      text: "x",
+    const [warning] = linkWarnings({
+      ...plain,
       nonAscii: names,
       nonAsciiCount: 20,
     });
     expect(warning).toContain("20 characters that are not plain ASCII");
     expect(warning).toContain(", and others");
+  });
+
+  // spec: OWLY-7
+  it("warns about a punycode host on its own", () => {
+    const warnings = linkWarnings({ ...plain, punycode: true });
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("xn--");
   });
 });

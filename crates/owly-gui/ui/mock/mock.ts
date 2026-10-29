@@ -123,7 +123,12 @@ setTimeout(async () => {
     await emit("urls-received", {
       id: 5,
       links: [
-        { text: "https://example.org/a-link", nonAscii: [], nonAsciiCount: 0 },
+        {
+          text: "https://example.org/a-link",
+          nonAscii: [],
+          nonAsciiCount: 0,
+          punycode: false,
+        },
       ],
       more: 0,
     });
@@ -132,11 +137,23 @@ setTimeout(async () => {
     await emit("urls-received", {
       id: 6,
       links: [
-        { text: "https://example.org/a-link", nonAscii: [], nonAsciiCount: 0 },
+        {
+          text: "https://example.org/a-link",
+          nonAscii: [],
+          nonAsciiCount: 0,
+          punycode: false,
+        },
         {
           text: "https://exаmple.org/login",
           nonAscii: ["U+0430"],
           nonAsciiCount: 1,
+          punycode: false,
+        },
+        {
+          text: "https://xn--exmple-cua.org/",
+          nonAscii: [],
+          nonAsciiCount: 0,
+          punycode: true,
         },
       ],
       more: 0,

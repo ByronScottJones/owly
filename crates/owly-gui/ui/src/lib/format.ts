@@ -88,14 +88,22 @@ export function describeStation(report: DoctorReport): string {
 /** The most different odd characters the backend names (src/model.rs). */
 const MAX_ODD_NAMED = 8;
 
-/** The warning for a link with characters outside printable ASCII, or null. */
-export function oddCharacters(link: ReceivedLink): string | null {
-  if (link.nonAsciiCount === 0) return null;
-  const n = link.nonAsciiCount;
-  const more = link.nonAscii.length >= MAX_ODD_NAMED ? ", and others" : "";
-  return (
-    `This address has ${n} character${n === 1 ? "" : "s"} that ` +
-    `${n === 1 ? "is" : "are"} not plain ASCII ` +
-    `(${link.nonAscii.join(", ")}${more}). It may be imitating another address.`
-  );
+/** The warnings for a link: non-ASCII characters, a punycode host. */
+export function linkWarnings(link: ReceivedLink): string[] {
+  const warnings: string[] = [];
+  if (link.nonAsciiCount > 0) {
+    const n = link.nonAsciiCount;
+    const more = link.nonAscii.length >= MAX_ODD_NAMED ? ", and others" : "";
+    warnings.push(
+      `This address has ${n} character${n === 1 ? "" : "s"} that ` +
+        `${n === 1 ? "is" : "are"} not plain ASCII ` +
+        `(${link.nonAscii.join(", ")}${more}). It may be imitating another address.`,
+    );
+  }
+  if (link.punycode) {
+    warnings.push(
+      "This address uses an internationalised name (xn--), which can look like another address.",
+    );
+  }
+  return warnings;
 }

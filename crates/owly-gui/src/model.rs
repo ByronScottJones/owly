@@ -109,7 +109,7 @@ pub enum IncomingOffer {
         more: usize,
     },
     Urls {
-        urls: Vec<String>,
+        links: Vec<ReceivedLink>,
         more: usize,
     },
 }
@@ -139,10 +139,10 @@ impl IncomingRequest {
                 more: files.len().saturating_sub(MAX_LISTED),
             },
             Offer::Urls(urls) => IncomingOffer::Urls {
-                urls: urls
+                links: urls
                     .iter()
                     .take(MAX_LISTED)
-                    .map(|u| display_text(u, MAX_LINK_SHOWN))
+                    .map(|u| ReceivedLink::new(u))
                     .collect(),
                 more: urls.len().saturating_sub(MAX_LISTED),
             },
@@ -227,6 +227,18 @@ pub struct ReceivedLink {
     pub non_ascii: Vec<String>,
     /// How many characters in all are not printable ASCII.
     pub non_ascii_count: usize,
+    /// A label of the host starts with `xn--`: an internationalised name,
+    /// which can imitate another address.
+    pub punycode: bool,
+}
+
+/// Whether a label of the link's host is punycode (`xn--`).
+fn has_punycode_host(url: &str) -> bool {
+    let rest = url.split_once("://").map_or(url, |(_, rest)| rest);
+    let authority = rest.split(['/', '?', '#']).next().unwrap_or("");
+    let host = authority.rsplit('@').next().unwrap_or("");
+    host.split('.')
+        .any(|label| label.len() >= 4 && label[..4].eq_ignore_ascii_case("xn--"))
 }
 
 impl ReceivedLink {
@@ -244,6 +256,7 @@ impl ReceivedLink {
             text: display_text(url, MAX_LINK_SHOWN),
             non_ascii: named,
             non_ascii_count: count,
+            punycode: has_punycode_host(url),
         }
     }
 }
@@ -361,6 +374,47 @@ mod tests {
         assert_eq!(link.non_ascii, ["U+0430", "U+200B", "U+0007", "U+0020"]);
         assert_eq!(link.non_ascii_count, 5);
         assert!(!link.text.contains('\u{200B}'));
+    }
+
+    // spec: OWLY-7
+    #[test]
+    fn a_punycode_host_is_flagged() {
+        for url in [
+            "https://xn--exmple-cua.org/",
+            "http://www.XN--80ak6aa92e.com:8080/a",
+            "https://user@xn--e1afmkfd.example/x",
+        ] {
+            assert!(ReceivedLink::new(url).punycode, "{url}");
+        }
+        for url in [
+            "https://example.org/xn--path",
+            "https://example.org/?q=xn--a#xn--b",
+            "https://xn.example.org/",
+            "https://example.org@evil.org/",
+        ] {
+            assert!(!ReceivedLink::new(url).punycode, "{url}");
+        }
+    }
+
+    // spec: OWLY-7
+    #[test]
+    fn the_incoming_prompt_marks_odd_links_too() {
+        let ask = AskRequest {
+            transfer_id: None,
+            transfer_type: None,
+            sender_computer_name: "Phone".into(),
+            sender_model_name: "iPhone".into(),
+            sender_id: String::new(),
+            bundle_id: String::new(),
+            sender_record: None,
+            file_icon: None,
+            offer: Offer::Urls(vec!["https://ex\u{430}mple.org".into()]),
+            described: String::new(),
+        };
+        let IncomingOffer::Urls { links, .. } = IncomingRequest::new(1, &ask).offer else {
+            panic!("not links");
+        };
+        assert_eq!(links[0].non_ascii, ["U+0430"]);
     }
 
     // spec: OWLY-7
