@@ -3,6 +3,16 @@
 Every unit of work, newest first, one entry per branch. An entry holds only what was known when the work was done: git has the commits, pull request and merge time (`cargo xtask changelog` prints them, in UTC, for each entry's branch), and `cargo xtask changelog --check` fails if an entry holds one of them or has no timestamp. All timestamps are ISO 8601 UTC, the time the entry was written or last updated.
 
 ---
+### docs/restore-aur-publish-note: ENGINEERING.md lost a sentence in a merge
+
+- Branch: `docs/restore-aur-publish-note`, base `main`
+- Written: 2026-10-29T16:09:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner and reviewer); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - Merging the `chore/aur-publish-off` and `docs/engineering-gaps-2` branches, which both edited the sentence about `AUR_SSH_KEY`, kept the older wording, so ENGINEERING.md again said releasing needs the `AUR_SSH_KEY` secret and did not mention `AUR_PUBLISH`. The workflow was unaffected. The sentence about `AUR_PUBLISH` is back.
+  - Found by reading the merged text, then checked: `just ci`, `gui-check`, `gui-a11y` and `gui-e2e` pass on the merged `main`.
+
+---
 ### feature/open-link: an Open button for received links, and a settings file
 
 - Branch: `feature/open-link`, base `main`
