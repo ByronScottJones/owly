@@ -14,6 +14,21 @@ Open this file only when writing or modifying Rust code. General rules stay in t
 - Deserialize configuration with `serde` and use TOML or JSON as appropriate.
 - Use `figment` or `config` when configuration must merge files, environment variables, and defaults.
 
+## Rust Version
+
+- Rust supports only the latest stable release and has no long-term-support line, so "supported" means "recent".
+- Record the minimum supported version once, as `rust-version` in the workspace `Cargo.toml` (`[workspace.package]`), and make CI and any `rust-toolchain.toml` agree with it.
+- **New projects:** use the latest stable toolchain, set `rust-version` to it, and use the 2024 edition. Use an older version only when a required dependency does not build on the latest stable or needs an older compiler, and put the reason in a comment beside `rust-version`.
+- **Existing projects:** leave `rust-version` alone until one of these is true, then move to the latest stable (not just the next release):
+  - a dependency, a security fix or a needed language or library feature requires a newer compiler;
+  - `rust-version` is more than six months (about four releases) behind the latest stable.
+- **Upgrading:**
+  1. Read the release notes for each release crossed, especially "Compatibility Notes", and check the edition guide if the edition changes.
+  2. Update `rust-version`, `rust-toolchain.toml` and CI together.
+  3. Run the full "Required Verification Pipeline" and `cargo deny check`; fix new `clippy` warnings and deprecations rather than allowing them.
+  4. Make the upgrade its own change, apart from feature work, and say in it what broke or was avoided.
+- For a published library, raising `rust-version` affects its users: say so in the changelog and release notes.
+
 ## Formatting & Linting
 
 - Formatter: `rustfmt` (authoritative — never suggest conflicting style).
