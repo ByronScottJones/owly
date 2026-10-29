@@ -78,14 +78,16 @@ fn main() -> ExitCode {
         }
         None => {
             let run = RunDir::new(run_dir.unwrap_or_else(|| RUN_DIR.into()));
-            let backend = match Injection::from_config(run) {
+            let backend = match Injection::from_config(run.clone()) {
                 Ok(b) => b,
                 Err(e) => {
                     tracing::error!("{e}");
                     return ExitCode::from(1);
                 }
             };
-            let probe = backend.prober();
+            // radio.toml read afresh for each probe, as the backend reads it
+            // each time the radio comes up: edits to it need no restart.
+            let probe = move || owly_radio::probe::from_config(run.clone());
             let options = Options { bus, polkit: true };
             rt.block_on(service::serve(backend, probe, options, shutdown()))
         }

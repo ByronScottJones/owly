@@ -111,7 +111,7 @@ impl Radio {
         let owner = sender(&header)?;
         if self.polkit && !authorized(conn, &owner).await? {
             return Err(ApiError::NotAuthorized(
-                "Not allowed to turn on AirDrop's radio from here.".into(),
+                "Not allowed to turn on AirDrop's radio from this session: polkit allows it from a local session, and asks others, such as over SSH, for an administrator's password (action io.github.t4t5.Owly.acquire).".into(),
             ));
         }
         self.acquire_as(owner, duration, false).await
