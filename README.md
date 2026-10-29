@@ -119,13 +119,14 @@ Make sure you set your phone's Airdrop setting to "Everyone for 10 minutes".
 | Realtek RTL8852BE | `rtw89_8852be` | ✅ Shared (opt-in) | ASUS PRIME B550M-A WIFI II, `10ec:b852`, CachyOS (kernel 7.2.9) |
 | Realtek RTL8852CE | `rtw89_8852ce` | ✅ Shared and exclusive (opt-in) | • Legion Slim 5 16AHP9, `10ec:c852`, Omarchy 4.0.4 (kernel 7.2.5)<br>• ThinkBook 16 G7 IML, `10ec:c852`, Ubuntu 24.04.5 (kernel 7.0) |
 | Realtek RTL8852BU (USB) | `rtw89_8852bu` | ✅ Exclusive (opt-in), as a second card | USB adapter, `35bc:0108`, NixOS 26.05 (kernel 7.2.9) |
+| Intel 9260 | `iwlwifi` | ✅ Exclusive | `8086:2526`, Debian 13 (kernel 7.2.12) |
 | Intel 9560 | `iwlwifi` | ✅ Exclusive | Lenovo 81SY, `8086:a370`, Omarchy 4.0.0 (kernel 7.2.8) |
-| Intel AX200 | `iwlwifi` | ✅ Exclusive | ThinkPad X1 Yoga, `8086:2723`, NixOS 26.05 (kernel 6.19.8) |
+| Intel AX200 | `iwlwifi` | ✅ Exclusive | • ThinkPad X1 Yoga, `8086:2723`, NixOS 26.05 (kernel 6.19.8)<br>• Micro Computer (HK) Tech Limited MS-A2, `8086:2723`, NixOS 26.05 (kernel 7.2.5) |
 | Intel AX201 | `iwlwifi` | ✅ Exclusive | • Ubuntu 24.04 (kernel 6.8)<br>• CachyOS (kernel 7.2.9)<br>• Intel Client Systems NUC10i7FNK, `8086:02f0`, NixOS 26.05 (kernel 6.18.55) |
+| Intel AX210 | `iwlwifi` | ✅ Exclusive | Micro Computer (HK) Tech Limited MS-A2, `8086:2725`, NixOS 26.05 (kernel 7.2.5) |
 | Intel AX211 | `iwlwifi` | ✅ Exclusive | • ThinkPad X1, `8086:51f1`, Ubuntu 26.04 (kernel 7.0)<br>• XPS 9320, `8086:51f0`, Arch (kernel 7.2.3)<br>• Legion Pro 7 16IRX8H, `8086:7a70`, Omarchy 4.0.4 (kernel 7.2.3)<br>• TUXEDO InfinityBook Max 15 Gen10 (Arrow Lake), `8086:7740`, Kubuntu 26.04.1 (kernel 7.0) |
 | Intel BE (Panther Lake) | `iwlwifi` | ✅ Exclusive | XPS 16, `8086:e440`, Arch (kernel 7.2) |
 | Intel BE200 | `iwlwifi` | ✅ Exclusive | GEEKOM IT13 Max, `8086:272b`, Omarchy 4.0.4 (kernel 7.2.5) |
-| Intel 9260 | `iwlwifi` | ✅ Exclusive | `8086:2526`, Debian 13 (kernel 7.2.12) |
 | MediaTek MT7921 | `mt7921e` | ⚠️ Exclusive, opt-in; shared fails ([#14](https://github.com/t4t5/owly/issues/14)) | `14c3:7961`, CachyOS (kernel 7.2.9) |
 | MediaTek MT7922 (RZ616) | `mt7921e` | ⚠️ Exclusive, opt-in; shared fails ([#14](https://github.com/t4t5/owly/issues/14)) | Minisforum MS-A2, `14c3:0616`, NixOS 26.05 (kernels 6.18 and 7.2.5) |
 | Realtek RTL8188FTV (USB) | `rtl8xxxu` | ⚠️ Exclusive (opt-in) | INTEL H81, `0bda:f179`, Linux Mint 22.3 (kernel 6.14.0): partly |
@@ -136,7 +137,6 @@ Make sure you set your phone's Airdrop setting to "Everyone for 10 minutes".
 | Intel Dual Band Wireless-AC 7265 | `iwlwifi` | ❌ Exclusive: firmware asserts on every ad-hoc start ([#16](https://github.com/t4t5/owly/issues/16)) | Zenbook UX305CA, `8086:095a`, Omarchy 4.0.4 (kernel 7.2.5) |
 | Intel Wireless-AC 8260 | `iwlwifi` | ❌ Exclusive: firmware resets on channel 44; no transfer on 6 | NUC6i7KYK, `8086:24f3`, Home Assistant OS (kernel 6.12) |
 | Intel Dual Band Wireless-AC 8265 | `iwlwifi` | ❌ Exclusive: firmware resets about 10 s after the ad-hoc cell starts; through a hidden AP, nothing heard from the phone | EliteBook x360 1030 G3, `8086:24fd`, Manjaro (kernel 6.12) |
-| Intel AX210 | `iwlwifi` | ❓ Exclusive untested | — |
 
 <!-- hardware-table:end -->
 
@@ -160,6 +160,8 @@ owly test-card
 This walks you through a photo each way with an iPhone, watches Wi-Fi for five minutes, and writes a JSON report. Open a pull request adding it to [`hardware/reports/`](hardware/README.md), or attach it to an issue.
 
 A card with no entry in `drivers.toml` gets the `*` entry, which runs only with `allow_untested = true`. Cards that can inject frames from a monitor interface while connected to Wi-Fi are the likely candidates for shared mode. Most mac80211 drivers can, but how they behave around it varies, which is what `drivers.toml` records. To try other settings, copy the `*` entry to `/etc/owly/drivers.toml` under your driver's name (`basename $(readlink /sys/class/net/<wifi>/device/driver)`) and change it there.
+
+owlyd reads `/etc/owly/radio.toml` and `/etc/owly/drivers.toml` again for each `owly doctor` and each time the radio comes up, so changes to them need no restart.
 
 ## Modes
 
@@ -196,6 +198,7 @@ What Owly does on each Wi-Fi driver comes from [`crates/owly-radio/drivers.toml`
 
 - **Shared mode needs your AP on channel 6, 44 or 149.** On any other channel, the radio won't come up, and `owly doctor` says so.
 - **The firewall can block the receiver**, so the phone never sees this computer. Allow TCP 8771 on `awdl0` (Omdrop: `omdrop firewall install`).
+- **The iPhone can stop answering.** If this computer stops showing up in the iPhone's share sheet, or transfers stay on "Waiting", restart the iPhone.
 - **Exclusive mode is slow on channel 6**, where Intel cards and others that refuse a 5 GHz cell run, since AWDL there gets few of the iPhone's slots: a 2.4 MB photo takes 10–17 s on an AX201.
 
 ## How it works

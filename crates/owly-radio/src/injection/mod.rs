@@ -131,6 +131,9 @@ pub struct Injection {
     start_awdl: StartAwdl,
     journal: Option<Arc<Mutex<Journal>>>,
     live: Option<Live>,
+    /// Whether the settings come from `/etc/owly/radio.toml`, which is then
+    /// read again each time the radio comes up.
+    reads_config: bool,
 }
 
 struct Live {
@@ -150,8 +153,9 @@ impl Injection {
     /// The backend as `/etc/owly/radio.toml` sets it up, with its run
     /// directory at `run`.
     pub fn from_config(run: RunDir) -> Result<Self, String> {
-        let settings = Config::load(Path::new(CONFIG))?.settings(run)?;
-        Ok(Injection::new(Arc::new(System), settings))
+        let mut backend = Injection::new(Arc::new(System), load(run)?);
+        backend.reads_config = true;
+        Ok(backend)
     }
 
     /// With AWDL started by `start_awdl`, for testing the setup around it.
@@ -162,6 +166,7 @@ impl Injection {
             start_awdl,
             journal: None,
             live: None,
+            reads_config: false,
         }
     }
 
@@ -195,6 +200,12 @@ impl Injection {
     async fn start(&mut self) -> Result<Link, Error> {
         if self.live.is_some() {
             return Err(Error::not_now("The radio is already up."));
+        }
+        // The file as it is now, not as it was when owlyd started.
+        if self.reads_config {
+            self.settings = load(self.settings.run_dir.clone()).map_err(|e| {
+                Error::no_radio(format!("Owly's radio settings can't be read: {e}"))
+            })?;
         }
         let run = self.settings.run_dir.clone();
         run.create()
@@ -295,13 +306,12 @@ impl Injection {
     pub fn probe(&self) -> Capabilities {
         crate::probe::capabilities(&*self.ops, &self.settings)
     }
+}
 
-    /// [`probe`](Self::probe) apart from the backend, which may be busy
-    /// bringing the radio up.
-    pub fn prober(&self) -> impl Fn() -> Capabilities + Send + Sync + 'static {
-        let (ops, settings) = (self.ops.clone(), self.settings.clone());
-        move || crate::probe::capabilities(&*ops, &settings)
-    }
+/// The settings `/etc/owly/radio.toml` gives, with the run directory at
+/// `run`.
+fn load(run: RunDir) -> Result<Settings, String> {
+    Config::load(Path::new(CONFIG))?.settings(run)
 }
 
 impl Backend for Injection {
