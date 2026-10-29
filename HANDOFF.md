@@ -4,10 +4,10 @@ What is left, and where to resume. Open items only; finished work is in [CHANGEL
 
 ## 1. Status
 
-- Updated: 2026-10-29T14:49:00Z
+- Updated: 2026-10-29T15:26:00Z
 - In flight: none.
 - Verified on 2026-10-27 on the Ubuntu 26.04 VM (no Wi-Fi card), before GitHub's CI could run again: `just ci`, `gui-check`, `gui-a11y`, `hwsim`, `gui-e2e`, `gui-build`, `just fuzz 60`, and the `owly` and `owly-gui` `.deb`s installed with `apt`. The VM runs `kernel.apparmor_restrict_unprivileged_userns=0` until it reboots.
-- GitHub's CI is running again and passed on `main` on 2026-10-29: `ci.yml` (`check`, `gui`, `fuzz`, `hwsim`) and `packages.yml` (Nix, AUR, `.deb`, `.rpm`, the window's `.deb`, and the install checks on Ubuntu 22.04 and 24.04, Debian 12 and 13, and Fedora 44).
+- GitHub's CI is running again and passed on `main` on 2026-10-29: `ci.yml` (`check`, `gui`, `fuzz`, `hwsim`) and `packages.yml` (Nix, AUR, `.deb`, `.rpm`, the window's `.deb`, and the install checks on Ubuntu 22.04 and 24.04, Debian 12 and 13, and Fedora 44). Both workflows now run only when started by hand (Actions tab, or `ghx workflow run ci.yml`), to save the allocation, so nothing guards `main` automatically: run `just ci` and `just gui-check gui-a11y gui-e2e` on the VM before a merge, and start both workflows before a release.
 
 ## 2. Resume here
 
