@@ -70,7 +70,7 @@ sudo dnf install ./owly-*.x86_64.rpm    # Fedora 44 and newer
 <details>
 <summary>From source</summary>
 
-Requires Rust 1.88 or newer:
+Requires Rust 1.98 or newer:
 
 ```sh
 cargo build --release --locked -p owlyd -p owly-cli
