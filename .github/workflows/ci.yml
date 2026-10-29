@@ -20,7 +20,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@v2
         with:
-          tool: just
+          tool: just,cargo-deny
       # The veth harness runs each AirDrop test in a user network namespace
       # (unshare -rn), which Ubuntu's AppArmor refuses unprivileged users.
       - name: Allow user namespaces
