@@ -34,6 +34,7 @@ The window adds these (docs/implementation.md, "The window", is the normative te
 | OWLY-4 | The page may only listen for events and call the app's own commands, each allowed by name; no dialog, file-system, shell, window or webview permission; every command needs a permission of its own. |
 | OWLY-5 | The page never names a path or an address: files go by the id of a backend-held selection (at most 8), people by the id of the last scan. The backend resolves a selection's paths to existing files or folders in canonical form, and accepts only absolute receive folders, `http` and `https` links of at most 2048 characters, and interface names of the usual form. |
 | OWLY-6 | Text from the other device is shown and never acted on: controls replaced, bidirectional-override and zero-width characters dropped, lengths bounded, at most 100 files or links listed per request with a count of the rest. |
+| OWLY-7 | A received link is opened only on the user's click, only once they have turned that on in the preferences (off by default); the page names it by receipt and position, the backend opens only `http` and `https` links, the window says to check the address and alerts, naming them, when it has a character that is not printable ASCII, and turning the setting on first asks in a dialog the page cannot show or answer. |
 
 Further requirements of the window, each with the test or check that holds it:
 
@@ -63,8 +64,19 @@ Non-functional: no root for the window (the radio is leased through owlyd's polk
 |---|---|---|---|
 | `OWLY_IFACE` | `awdl0` | 1 to 15 characters of letters, digits, `.`, `_` and `-` | The link to receive and scan on; it must be the one owlyd leased (otherwise the scan skips the radio's AWDL peers). |
 | `OWLY_RECEIVE_DIR` | `<Downloads>/Owly` | Absolute | Created with mode `0700` when receiving starts, if it does not exist. |
+| `OWLY_OPEN_LINKS` | the settings file's `open_links`, else off | `1`, `true`, `0` or `false` | Whether a received link has an Open button (OWLY-7). Beats the file, and the preferences then show it as fixed. |
 | `OWLY_BUS` | the system bus | any D-Bus address | Honoured in debug builds only. |
 | `RUST_LOG` | `warn` | `tracing` filter | Logs go to stderr. |
+
+### Settings file
+
+`owly_config.toml` in `~/.config/owly/` (under `XDG_CONFIG_HOME` if set), TOML, written by the preferences dialog or by hand; without it everything is off. Precedence, lowest first: the defaults, the file, the environment (docs: configuration.md). An unknown key or a wrong type stops the window starting, with the file's name and line.
+
+```toml
+[window]
+# Show an Open button on received links (OWLY-7). Off unless true.
+open_links = false
+```
 
 ### Commands (IPC)
 
@@ -74,7 +86,7 @@ To add a command: write it in `commands.rs` with `#[tauri::command]`; add it to 
 
 | Command | Arguments | Returns | What it does |
 |---|---|---|---|
-| `get_status` | | `Status` | Name, interface, visibility, radio state, receive folder, whether Contacts Only is available, whether browsing. |
+| `get_status` | | `Status` | Name, interface, visibility, radio state, receive folder, whether Contacts Only is available, whether browsing, and the settings in force (`settings`: `openLinks`, `openLinksFixed`, `file`). |
 | `acquire_radio` | | | Leases the radio from owlyd (polkit may ask); watches for the lease ending. |
 | `release_radio` | | | Gives it back and stops browsing and receiving. |
 | `doctor` | | JSON | The report of `owly doctor --json`. |
@@ -85,6 +97,8 @@ To add a command: write it in `commands.rs` with `#[tauri::command]`; add it to 
 | `send_link` | `peer`, `url` | transfer id | Sends a link. |
 | `set_visibility` | `mode: everyone, contacts_only, off` | | Starts or stops the receiver. Contacts Only is refused. |
 | `respond` | `request`, `accept` | | Answers an incoming request. |
+| `open_link` | `id`, `index` | | Opens the received link at that receipt and position in the browser, if links are turned on (OWLY-7); the backend holds the addresses. |
+| `set_settings` | `open_links: bool` | | Saves the preferences. Turning links on first shows a confirmation dialog of the backend's own; Cancel changes nothing. Refused when `OWLY_OPEN_LINKS` fixes it. |
 
 ### Events
 
@@ -108,7 +122,7 @@ To add a command: write it in `commands.rs` with `#[tauri::command]`; add it to 
 
 - Received files go in the receive folder under the names the other device offered, made safe by `owly-airdrop`'s sandboxed extraction (UP-*, never overwriting a file).
 - The TLS identity of the receiver is `$XDG_STATE_HOME/owly` (else `~/.local/state/owly`), generated on first use and shared with the CLI.
-- Links are text. Nothing is opened (SEC-4).
+- Links are text, shown with a note of any character that is not plain ASCII. They are opened only on a click, once the user has turned that on (OWLY-7, SEC-4).
 - Nothing is stored by the page: no cookies, no local storage.
 
 ## 5. Behaviour
@@ -157,7 +171,9 @@ File map (paths from `crates/`):
 | `owly-gui/src/main.rs` | Starts the window. |
 | `owly-gui/src/lib.rs` | Configuration from the environment, the navigation guard, the plugins, the exit handler, and the security tests. |
 | `owly-gui/src/commands.rs` | The IPC commands, the events, the scan loop, the receiver, and transfers. |
-| `owly-gui/src/state.rs` | The window's state: the lease, tasks, requests waiting, selections and their limits. |
+| `owly-gui/src/state.rs` | The window's state: the lease, tasks, requests waiting, selections, received links and their limits. |
+| `owly-gui/src/settings.rs` | The settings file: loading with the environment over it, saving, and what turning a setting on needs. |
+| `owly-gui/src/open.rs` | Opens a link with the desktop's opener. |
 | `owly-gui/src/model.rs` | What crosses the IPC boundary, and the text sanitising. |
 | `owly-gui/src/validate.rs` | Checks of everything the page sends: paths, links, interface names. |
 | `owly-gui/src/error.rs` | `AppError` and how it crosses as `{ kind, message }`. |
@@ -171,7 +187,8 @@ File map (paths from `crates/`):
 | `owly-gui/ui/src/lib/PersonCard.svelte`, `Avatar.svelte` | One person, and their round avatar. |
 | `owly-gui/ui/src/lib/SendDialog.svelte` | Choosing files, a folder or a link to send. |
 | `owly-gui/ui/src/lib/IncomingDialog.svelte` | The prompt for a request, with Decline first. |
-| `owly-gui/ui/src/lib/Arrivals.svelte` | What was received, and received links with Copy. |
+| `owly-gui/ui/src/lib/Arrivals.svelte` | What was received, and received links with Copy, the caution, the non-ASCII alert and (if turned on) Open. |
+| `owly-gui/ui/src/lib/PreferencesDialog.svelte` | The preferences. |
 | `owly-gui/ui/src/lib/VisibilityFooter.svelte` | "Allow me to be discovered by:" and its explanation. |
 | `owly-gui/ui/src/lib/DoctorPanel.svelte` | The Doctor tab. |
 | `owly-gui/ui/src/lib/*.test.ts` | Vitest tests of the API, formatting and the model. |
@@ -186,8 +203,8 @@ The window's page is a web page, and anything that runs in a webview can be atta
 
 | Boundary | Untrusted side | What crosses | Defence |
 |---|---|---|---|
-| Page to backend | The page | Command arguments | Only 12 named commands, each needing its own permission (OWLY-4); arguments are ids and enums, never paths or addresses (OWLY-5); the backend validates them (`validate.rs`). |
-| Backend to page | The other device's names, file names and links | Event payloads | Sanitised and bounded (OWLY-6); shown as text, never as HTML (Svelte escapes), never opened (SEC-4). |
+| Page to backend | The page | Command arguments | Only 14 named commands, each needing its own permission (OWLY-4); arguments are ids and enums, never paths or addresses (OWLY-5); the backend validates them (`validate.rs`). |
+| Backend to page | The other device's names, file names and links | Event payloads | Sanitised and bounded (OWLY-6); shown as text, never as HTML (Svelte escapes), opened only on a click once the user has turned that on (OWLY-7, SEC-4). |
 | The page's content | Anything it loads | | CSP with no inline script, `eval`, remote or `data:` source; `freezePrototype`; navigation restricted to the app's own page (OWLY-3). |
 | The network | Any device on the link | AirDrop requests | `owly-airdrop`'s protections (the spec's SEC-* and UP-* rules): sandboxed extraction, size limits, ASK timeouts. The window adds the cap of 32 pending requests. |
 | The radio | Other users of the computer | The lease | owlyd's polkit-gated D-Bus API; the window runs as the user. |
@@ -220,7 +237,8 @@ Rust 2024 edition, 1.98 or newer; the workspace is `resolver = "3"`. Node 22 for
 | Dependency | Where | Why |
 |---|---|---|
 | `tauri` 2.12 | owly-gui | The window and IPC. The npm packages are pinned to `~2.12.0`, because Tauri checks that their minor version matches the crate's. 2.12 needs Rust 1.90. |
-| `tauri-plugin-dialog` 2 | owly-gui | The native file picker, called by the backend only; the page has no dialog permission. |
+| `tauri-plugin-dialog` 2 | owly-gui | The native file picker and the confirmation before links are turned on, called by the backend only; the page has no dialog permission. |
+| `toml` 1 | owly-gui | The settings file. |
 | `tauri-plugin-single-instance` 2 | owly-gui | GUI-3. |
 | `thiserror` 2, `serde`, `serde_json`, `url`, `tracing`, `tokio` | owly-gui | Errors, payloads, link validation, logs, async. |
 | `zbus` 5, `nix` 0.31, `futures-util`, `getrandom` | owly-session | The D-Bus lease, interface lookup, tag generation. |
@@ -262,7 +280,8 @@ CI (`.github/workflows`) runs only when started by hand, from the Actions tab or
 | OWLY-4 | `the_window_can_only_listen_and_call_the_listed_commands`, `every_command_in_the_manifest_has_a_permission` |
 | OWLY-5 | `state.rs`: `the_oldest_selection_goes_first`; `validate.rs`: six tests |
 | OWLY-6 | `model.rs`: `controls_are_replaced_and_reordering_dropped`, `long_text_is_cut_with_an_ellipsis`, `an_offer_is_bounded_and_counted` |
-| GUI-1, GUI-2 | `just gui-a11y`: 9 states in 2 themes |
+| OWLY-7 | `settings.rs`: five tests (defaults, a saved file's modes, the environment over the file, turning on needs a confirmation); `state.rs`: `a_link_opens_only_when_links_are_on`, `a_link_is_named_by_receipt_and_position_and_must_be_http`, `the_oldest_receipt_of_links_goes_first`; `model.rs`: three tests of the non-ASCII check; `model.test.ts` and `format.test.ts`. Not exercised end to end: the backend's confirmation dialog and the browser opening (HANDOFF section 6) |
+| GUI-1, GUI-2 | `just gui-a11y`: 12 states in 2 themes |
 | GUI-3, GUI-5, GUI-6 | `just gui-e2e`; `tests/gui-e2e/run.sh` |
 | The session calls | `crates/owly-session/tests/session.rs`: the lease, a scan, a file and a link each way, the release |
 | The page's logic | 39 Vitest tests under `ui/src/lib` |

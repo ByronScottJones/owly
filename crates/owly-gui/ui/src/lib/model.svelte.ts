@@ -9,10 +9,12 @@ import {
   getStatus,
   isAppError,
   on,
+  openLink,
   releaseRadio,
   respond,
   sendLink,
   sendSelection,
+  setSettings,
   setVisibility,
   startBrowse,
   stopBrowse,
@@ -22,8 +24,9 @@ import {
   type Peer,
   type ReceiveFailed,
   type Received,
-  type SelectionInfo,
+  type ReceivedLink,
   type ReceivedUrls,
+  type SelectionInfo,
   type Status,
   type TransferUpdate,
   type Visibility,
@@ -35,6 +38,10 @@ export interface Arrival {
   key: string;
   kind: "files" | "urls" | "failed";
   lines: string[];
+  /** For links: the receipt, the links and how many more were not listed. */
+  receipt?: number;
+  links?: ReceivedLink[];
+  more?: number;
 }
 
 /** How long a finished transfer stays under a person's name. */
@@ -76,7 +83,14 @@ export class Model {
         }),
       ),
       on<ReceivedUrls>("urls-received", (r) =>
-        this.#arrive({ key: `urls-${r.id}`, kind: "urls", lines: r.urls }),
+        this.#arrive({
+          key: `urls-${r.id}`,
+          kind: "urls",
+          lines: r.links.map((l) => l.text),
+          receipt: r.id,
+          links: r.links,
+          more: r.more,
+        }),
       ),
       on<ReceiveFailed>("receive-failed", (r) =>
         this.#arrive({
@@ -226,6 +240,25 @@ export class Model {
     } catch (e: unknown) {
       this.problem = errorText(e);
     }
+  }
+
+  /** Opens a received link in the browser: the backend checks it is on. */
+  async openLink(receipt: number, index: number): Promise<void> {
+    try {
+      await openLink(receipt, index);
+    } catch (e: unknown) {
+      this.problem = errorText(e);
+    }
+  }
+
+  /** Turns opening links on or off; turning it on asks in a backend dialog. */
+  async setOpenLinks(on: boolean): Promise<void> {
+    try {
+      await setSettings(on);
+    } catch (e: unknown) {
+      this.problem = errorText(e);
+    }
+    await this.refresh();
   }
 
   dismiss(key: string): void {

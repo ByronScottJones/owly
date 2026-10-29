@@ -21,7 +21,7 @@ in_scope = [
     # Phase 2: radio daemon, every supported card.
     "AWDL-1", "AWDL-2", "AWDL-11", "AWDL-12", "NET-4",
     # The window: the page is untrusted.
-    "OWLY-3", "OWLY-4", "OWLY-5", "OWLY-6",
+    "OWLY-3", "OWLY-4", "OWLY-5", "OWLY-6", "OWLY-7",
 ]
 
 # MUSTs that no test can cover, each with the reason.

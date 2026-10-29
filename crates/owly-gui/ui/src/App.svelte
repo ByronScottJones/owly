@@ -6,17 +6,28 @@
   import DoctorPanel from "./lib/DoctorPanel.svelte";
   import IncomingDialog from "./lib/IncomingDialog.svelte";
   import { Model } from "./lib/model.svelte";
+  import PreferencesDialog from "./lib/PreferencesDialog.svelte";
   import SendDialog from "./lib/SendDialog.svelte";
 
   const model = new Model();
   let view = $state<"airdrop" | "doctor">("airdrop");
   let sending = $state<Peer | null>(null);
+  let preferences = $state(false);
+
+  function onkeydown(event: KeyboardEvent): void {
+    if (event.ctrlKey && event.key === ",") {
+      event.preventDefault();
+      preferences = true;
+    }
+  }
 
   onMount(() => {
     void model.init();
     return () => model.dispose();
   });
 </script>
+
+<svelte:window {onkeydown} />
 
 <div class="app">
   <nav aria-label="Sections">
@@ -58,6 +69,28 @@
           Doctor
         </button>
       </li>
+      <li>
+        <button type="button" onclick={() => (preferences = true)}>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <circle
+              cx="12"
+              cy="12"
+              r="3"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            />
+            <path
+              d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            />
+          </svg>
+          Preferences
+        </button>
+      </li>
     </ul>
   </nav>
 
@@ -89,7 +122,15 @@
 <Arrivals
   arrivals={model.arrivals}
   receiveDir={model.status?.receiveDir ?? ""}
+  openLinks={model.status?.settings.openLinks ?? false}
   ondismiss={(key) => model.dismiss(key)}
+  onopen={(receipt, index) => void model.openLink(receipt, index)}
+/>
+<PreferencesDialog
+  status={model.status}
+  open={preferences}
+  onclose={() => (preferences = false)}
+  onopenlinks={(on) => model.setOpenLinks(on)}
 />
 
 <style>

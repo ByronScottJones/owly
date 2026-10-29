@@ -15,6 +15,13 @@ export interface RadioStatus {
   held: boolean;
 }
 
+export interface SettingsView {
+  openLinks: boolean;
+  /** OWLY_OPEN_LINKS is set, so the preferences can't change it. */
+  openLinksFixed: boolean;
+  file: string;
+}
+
 export interface Status {
   name: string;
   interface: string;
@@ -23,6 +30,7 @@ export interface Status {
   receiveDir: string;
   contactsOnlyAvailable: boolean;
   browsing: boolean;
+  settings: SettingsView;
 }
 
 export interface OfferedFile {
@@ -80,9 +88,18 @@ export interface Received {
   paths: string[];
 }
 
+/** A received link, and what is odd about it (src/model.rs `ReceivedLink`). */
+export interface ReceivedLink {
+  text: string;
+  /** Code points like "U+0430" of characters that are not printable ASCII. */
+  nonAscii: string[];
+  nonAsciiCount: number;
+}
+
 export interface ReceivedUrls {
   id: number;
-  urls: string[];
+  links: ReceivedLink[];
+  more: number;
 }
 
 export interface ReceiveFailed {
@@ -122,6 +139,11 @@ export const setVisibility = (mode: Visibility): Promise<void> =>
   invoke("set_visibility", { mode });
 export const respond = (request: number, accept: boolean): Promise<void> =>
   invoke("respond", { request, accept });
+/** Opens a received link by its receipt and position (OWLY-7). */
+export const openLink = (id: number, index: number): Promise<void> =>
+  invoke("open_link", { id, index });
+export const setSettings = (openLinks: boolean): Promise<void> =>
+  invoke("set_settings", { openLinks });
 
 /** Opens the native picker; adds to `selection` when given. Null if cancelled. */
 export const chooseItems = (

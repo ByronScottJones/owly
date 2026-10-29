@@ -18,6 +18,8 @@ const api = vi.hoisted(() => ({
   stopBrowse: vi.fn(),
   setVisibility: vi.fn(),
   respond: vi.fn(),
+  openLink: vi.fn(),
+  setSettings: vi.fn(),
   sendSelection: vi.fn(),
   sendLink: vi.fn(),
   chooseItems: vi.fn(),
@@ -40,6 +42,11 @@ const status: Status = {
   receiveDir: "/home/b/Downloads/Owly",
   contactsOnlyAvailable: false,
   browsing: false,
+  settings: {
+    openLinks: false,
+    openLinksFixed: false,
+    file: "/home/b/.config/owly/owly_config.toml",
+  },
 };
 
 function emit(event: string, payload: unknown): void {
@@ -84,6 +91,8 @@ beforeEach(() => {
     api.stopBrowse,
     api.setVisibility,
     api.respond,
+    api.openLink,
+    api.setSettings,
     api.sendSelection,
     api.sendLink,
     api.discardSelection,
@@ -128,6 +137,62 @@ describe("Model", () => {
     ]);
     model.dismiss("files-3");
     expect(model.arrivals).toEqual([]);
+  });
+
+  // spec: OWLY-7
+  it("keeps what is odd about each received link and its receipt", async () => {
+    const model = new Model();
+    await model.init();
+    const odd = {
+      text: "https://ex\u0430mple.org",
+      nonAscii: ["U+0430"],
+      nonAsciiCount: 1,
+    };
+    emit("urls-received", {
+      id: 5,
+      links: [
+        { text: "https://example.org", nonAscii: [], nonAsciiCount: 0 },
+        odd,
+      ],
+      more: 2,
+    });
+    expect(model.arrivals).toHaveLength(1);
+    const arrival = model.arrivals[0];
+    if (!arrival) throw new Error("nothing arrived");
+    expect(arrival.receipt).toBe(5);
+    expect(arrival.links?.[1]).toEqual(odd);
+    expect(arrival.more).toBe(2);
+  });
+
+  // spec: OWLY-5, OWLY-7
+  it("opens a link by receipt and position, never by address", async () => {
+    api.openLink.mockResolvedValue(undefined);
+    const model = new Model();
+    await model.init();
+    await model.openLink(5, 1);
+    expect(api.openLink).toHaveBeenCalledWith(5, 1);
+  });
+
+  it("shows why a link would not open", async () => {
+    api.openLink.mockRejectedValue({
+      kind: "unavailable",
+      message: "opening links is off",
+    });
+    const model = new Model();
+    await model.init();
+    await model.openLink(5, 0);
+    expect(model.problem).toBe("opening links is off");
+  });
+
+  // spec: OWLY-7
+  it("asks the backend to turn links on, then reads what is in force", async () => {
+    api.setSettings.mockResolvedValue(undefined);
+    const model = new Model();
+    await model.init();
+    api.getStatus.mockClear();
+    await model.setOpenLinks(true);
+    expect(api.setSettings).toHaveBeenCalledWith(true);
+    expect(api.getStatus).toHaveBeenCalledOnce();
   });
 
   it("clears a finished transfer after a while, but not a newer one", async () => {
