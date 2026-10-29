@@ -85,5 +85,14 @@ click 480 331; sleep 1; xdotool type --delay 40 "https://example.org/from-gui"; 
 click 655 378; sleep 6; shot 11-sent
 check "the phone receives the window's link" grep -q "https://example.org/from-gui" "$OUT/phone-recv.log"
 
+# A file chosen with the system file chooser (OWLY-5: the backend opens the
+# chooser and keeps the paths; the page sees only names). Ctrl+L types a path.
+echo "chosen in the picker" > "$OUT/chosen.txt"; chmod 644 "$OUT/chosen.txt"
+click 298 210; sleep 2
+click 321 289; sleep 3; shot 12-picker
+xdotool key ctrl+l; sleep 1; xdotool type --delay 30 "$OUT/chosen.txt"; sleep 1; xdotool key Return; sleep 2; shot 13-picked
+click 655 387; sleep 6; shot 14-picked-sent
+check "a file chosen in the picker reaches the phone" grep -qx "chosen in the picker" "$OUT/phone-recv/chosen.txt"
+
 echo "screenshots: $OUT/shots"
 [ "$failures" -eq 0 ] && echo "all checks passed" || { echo "$failures failed"; exit 1; }

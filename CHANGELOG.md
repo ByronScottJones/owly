@@ -14,6 +14,24 @@ Every unit of work, newest first, one entry per branch. An entry holds only what
   - Confirmed as built: `http` and `https` links, and the link-opening setting off by default.
   - OWLY-7 now also alerts on a punycode (`xn--`) host, and the incoming prompt, which asks whether to accept a link, shows the same alerts as the received card. The prompt's links are now `ReceivedLink`s, not plain text, so the event's shape changed for the page.
   - H-2 (a real card and phone) is deferred by the owner until a Linux computer with a supported card is set up.
+### test/gui-drop-and-picker: the file chooser in the end-to-end test
+
+- Branch: `test/gui-drop-and-picker`, base `main`
+- Written: 2026-10-29T17:10:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - `just gui-e2e` now also opens the Send dialog, clicks Add Files, types a path into the system file chooser (Ctrl+L) and sends, and checks the file reaches the phone (OWLY-5: the backend opens the chooser and keeps the paths).
+  - Tried and dropped: dragging a file onto a person under Xvfb. A test source window that offers `text/uri-list` drops correctly onto a plain GTK target and onto a bare WebKitGTK view, but the running owly-gui window receives no drag event at all, even when run alone with no radio. The cause was not found, so drop is still unchecked and stays with H-5 for a real GNOME or KDE session.
+### docs/restore-aur-publish-note: ENGINEERING.md lost a sentence in a merge
+
+- Branch: `docs/restore-aur-publish-note`, base `main`
+- Written: 2026-10-29T16:09:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner and reviewer); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - Merging the `chore/aur-publish-off` and `docs/engineering-gaps-2` branches, which both edited the sentence about `AUR_SSH_KEY`, kept the older wording, so ENGINEERING.md again said releasing needs the `AUR_SSH_KEY` secret and did not mention `AUR_PUBLISH`. The workflow was unaffected. The sentence about `AUR_PUBLISH` is back.
+  - Found by reading the merged text, then checked: `just ci`, `gui-check`, `gui-a11y` and `gui-e2e` pass on the merged `main`.
+
+---
 ### feature/open-link: an Open button for received links, and a settings file
 
 - Branch: `feature/open-link`, base `main`
