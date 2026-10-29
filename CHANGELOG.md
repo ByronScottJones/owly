@@ -3,6 +3,14 @@
 Every unit of work, newest first, one entry per branch. An entry holds only what was known when the work was done: git has the commits, pull request and merge time (`cargo xtask changelog` prints them, in UTC, for each entry's branch), and `cargo xtask changelog --check` fails if an entry holds one of them or has no timestamp. All timestamps are ISO 8601 UTC, the time the entry was written or last updated.
 
 ---
+### test/gui-drop-and-picker: the file chooser in the end-to-end test
+
+- Branch: `test/gui-drop-and-picker`, base `main`
+- Written: 2026-10-29T17:10:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - `just gui-e2e` now also opens the Send dialog, clicks Add Files, types a path into the system file chooser (Ctrl+L) and sends, and checks the file reaches the phone (OWLY-5: the backend opens the chooser and keeps the paths).
+  - Tried and dropped: dragging a file onto a person under Xvfb. A test source window that offers `text/uri-list` drops correctly onto a plain GTK target and onto a bare WebKitGTK view, but the running owly-gui window receives no drag event at all, even when run alone with no radio. The cause was not found, so drop is still unchecked and stays with H-5 for a real GNOME or KDE session.
 ### feature/open-link: an Open button for received links, and a settings file
 
 - Branch: `feature/open-link`, base `main`
