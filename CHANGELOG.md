@@ -3,6 +3,15 @@
 Every unit of work, newest first, one entry per branch. An entry holds only what was known when the work was done: git has the commits, pull request and merge time (`cargo xtask changelog` prints them, in UTC, for each entry's branch), and `cargo xtask changelog --check` fails if an entry holds one of them or has no timestamp. All timestamps are ISO 8601 UTC, the time the entry was written or last updated.
 
 ---
+### docs/handoff-manual-ci: HANDOFF.md says CI is manual
+
+- Branch: `docs/handoff-manual-ci`, base `main`
+- Written: 2026-10-29T15:26:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner and reviewer); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - HANDOFF.md section 1 now says `ci.yml` and `packages.yml` run only when started by hand, so the checks go on the VM before a merge. The workflow change itself is in the `chore/ci-manual-only` entry; this line was held back so the two branches did not conflict.
+
+---
 ### chore/ci-manual-only: GitHub CI runs only when started by hand
 
 - Branch: `chore/ci-manual-only`, base `main`
