@@ -213,11 +213,11 @@ Accepted risks: `glib` (RUSTSEC-2024-0429, an unsound iterator in the GTK 3 bind
 
 ## 9. Technology and dependencies
 
-Rust 2024 edition, 1.88 or newer; the workspace is `resolver = "3"`. Node 22 for the page.
+Rust 2024 edition, 1.98 or newer; the workspace is `resolver = "3"`. Node 22 for the page.
 
 | Dependency | Where | Why |
 |---|---|---|
-| `tauri` 2.11 | owly-gui | The window and IPC. 2.12 needs a newer Rust than 1.88, so the npm packages are pinned to `~2.11.0`, which Tauri checks. |
+| `tauri` 2.11 | owly-gui | The window and IPC. 2.12 needs Rust 1.90, which the workspace now has; the move to it is not done, so the npm packages stay pinned to `~2.11.0`, which Tauri checks. |
 | `tauri-plugin-dialog` 2 | owly-gui | The native file picker, called by the backend only; the page has no dialog permission. |
 | `tauri-plugin-single-instance` 2 | owly-gui | GUI-3. |
 | `thiserror` 2, `serde`, `serde_json`, `url`, `tracing`, `tokio` | owly-gui | Errors, payloads, link validation, logs, async. |

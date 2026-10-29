@@ -3,6 +3,19 @@
 Every unit of work, newest first, one entry per branch. An entry holds only what was known when the work was done: git has the commits, pull request and merge time (`cargo xtask changelog` prints them, in UTC, for each entry's branch), and `cargo xtask changelog --check` fails if an entry holds one of them or has no timestamp. All timestamps are ISO 8601 UTC, the time the entry was written or last updated.
 
 ---
+### chore/rust-1.98: the minimum Rust version, 1.88 to 1.98
+
+- Branch: `chore/rust-1.98`, base `main`
+- Written: 2026-10-29T13:02:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner and reviewer); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - `rust-version` in `Cargo.toml` is 1.98, and README.md, `packaging/package.sh` and ENGINEERING.md say so. This follows the new Rust version policy (`agents/rust.md`): the workspace was ten releases behind.
+  - 1.98, not the latest stable (1.99.1), because the Nix package builds with the nixpkgs that `flake.lock` pins (15 October 2026), whose default Rust is 1.98; Cargo refuses to build when `rust-version` is newer than the compiler. Move to 1.99 when `flake.lock` is updated (`nix flake update nixpkgs`, on a machine with Nix).
+  - Verified on the VM with Rust 1.98.1 installed by `rustup` and chosen with `RUSTUP_TOOLCHAIN`: `just ci`, `gui-check`, `gui-a11y` and `gui-e2e`. The same four also passed on 1.99.1 before the pin was changed from 1.99. No code needed changing and no new warnings appeared.
+  - Not checked: the Nix build itself (no Nix on the VM or the Mac), and the `.deb` and `.rpm` jobs on GitHub.
+  - Not done: Tauri 2.12 needs Rust 1.90, which the workspace now has; the move from 2.11 is its own change (ENGINEERING.md section 9).
+
+---
 ### feature/live-people: the list of people updates as devices come and go
 
 - Branch: `feature/live-people`, base `fix/cli-no-bluez-wait` (the `fix/cli-no-bluez-wait` entry's change is in it)

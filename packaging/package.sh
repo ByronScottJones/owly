@@ -11,7 +11,7 @@
 #
 #   packaging/package.sh deb|rpm|tar
 #
-# The package lands in OUT ($PWD by default). Besides Rust 1.88 or newer,
+# The package lands in OUT ($PWD by default). Besides Rust 1.98 or newer,
 # it needs dpkg-dev for the deb, or rpm-build for the rpm.
 set -eu
 umask 022
