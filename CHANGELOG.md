@@ -3,6 +3,17 @@
 Every unit of work, newest first, one entry per branch. An entry holds only what was known when the work was done: git has the commits, pull request and merge time (`cargo xtask changelog` prints them, in UTC, for each entry's branch), and `cargo xtask changelog --check` fails if an entry holds one of them or has no timestamp. All timestamps are ISO 8601 UTC, the time the entry was written or last updated.
 
 ---
+### chore/aur-publish-off: no publishing to the AUR until there is a key
+
+- Branch: `chore/aur-publish-off`, base `main`
+- Written: 2026-10-29T15:41:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner, who asked for it); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - `aur-release.yml` publishes to the AUR only when the repository variable `AUR_PUBLISH` is `true`. Unset (as now), a release still tags, builds the packages and attaches the files, and the publish step is replaced by a notice. The "`AUR_SSH_KEY` isn't set" failure applies only when publishing is on. To turn it on later: add the `AUR_SSH_KEY` secret, then set the variable (`ghx variable set AUR_PUBLISH --body true`).
+  - This changes nothing today: the release jobs already run only on `t4t5/owly`, not on this fork. The switch is for a release made from a repository that has no key yet.
+  - Not tested: the workflow has not run (it cannot here). The YAML parses, and the conditions were read against the step outputs.
+
+---
 ### docs/handoff-manual-ci: HANDOFF.md says CI is manual
 
 - Branch: `docs/handoff-manual-ci`, base `main`
