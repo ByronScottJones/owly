@@ -216,6 +216,7 @@ owly gui          # or open Owly from the application menu
 It's a separate package, `owly-gui`, which needs `owly` (it takes the radio from `owlyd` as `owly radio up` does, and gives it back when you close it). Only one window runs at a time; opening it again raises the first. It needs WebKitGTK 4.1, and on Linux only.
 
 - **Turn On AirDrop** takes the radio, and finds people nearby. Click a person to choose files, a folder or a link to send, or drop files onto them.
+- **Preferences** (in the sidebar, or Ctrl+,) can add an Open button to links you receive. It is off until you turn it on, asks you to confirm, and warns about addresses that contain characters that are not plain ASCII. The setting is kept in `~/.config/owly/owly_config.toml`, or set `OWLY_OPEN_LINKS=1`.
 - **Everyone** lets nearby devices see this computer and ask to send to it. **Receiving Off** hides it. **Contacts Only** is listed but can't be chosen: it needs an Apple identity, which a Linux computer can't make.
 - Received files go to `~/Downloads/Owly` unless `OWLY_RECEIVE_DIR` says otherwise. Links are shown, never opened.
 - `OWLY_IFACE` picks another interface than `awdl0`.

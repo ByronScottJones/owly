@@ -4,6 +4,8 @@ use owly_airdrop::proto::messages::{AskRequest, Offer};
 use owly_session::discover::Listed;
 use serde::{Deserialize, Serialize};
 
+use crate::settings::SettingsView;
+
 /// Who can see this computer (docs/SPEC.md, ID-6).
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -77,6 +79,7 @@ pub struct Status {
     /// which owly-airdrop doesn't implement (docs/implementation.md).
     pub contacts_only_available: bool,
     pub browsing: bool,
+    pub settings: SettingsView,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -209,11 +212,62 @@ pub struct Received {
     pub paths: Vec<String>,
 }
 
+/// How many different odd characters a warning names.
+const MAX_ODD_NAMED: usize = 8;
+
+/// One received link, as shown (SEC-4), and what is odd about it.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ReceivedLink {
+    pub text: String,
+    /// The code points, as `U+0430`, of characters that are not printable
+    /// ASCII, first `MAX_ODD_NAMED` different ones in order of appearance.
+    /// Found in the link as it arrived, so the characters `display_text`
+    /// drops are counted too.
+    pub non_ascii: Vec<String>,
+    /// How many characters in all are not printable ASCII.
+    pub non_ascii_count: usize,
+}
+
+impl ReceivedLink {
+    pub fn new(url: &str) -> Self {
+        let mut named = Vec::new();
+        let mut count = 0;
+        for c in url.chars().filter(|c| !c.is_ascii_graphic()) {
+            count += 1;
+            let code = format!("U+{:04X}", u32::from(c));
+            if named.len() < MAX_ODD_NAMED && !named.contains(&code) {
+                named.push(code);
+            }
+        }
+        ReceivedLink {
+            text: display_text(url, MAX_LINK_SHOWN),
+            non_ascii: named,
+            non_ascii_count: count,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ReceivedUrls {
     pub id: u64,
-    pub urls: Vec<String>,
+    pub links: Vec<ReceivedLink>,
+    pub more: usize,
+}
+
+impl ReceivedUrls {
+    pub fn new(id: u64, urls: &[String]) -> Self {
+        ReceivedUrls {
+            id,
+            links: urls
+                .iter()
+                .take(MAX_LISTED)
+                .map(|u| ReceivedLink::new(u))
+                .collect(),
+            more: urls.len().saturating_sub(MAX_LISTED),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -287,6 +341,46 @@ mod tests {
         assert_eq!(files.len(), MAX_LISTED);
         assert_eq!(more, 5);
         assert_eq!(files[0].name, "f0");
+    }
+
+    // spec: OWLY-7
+    #[test]
+    fn a_plain_ascii_link_has_nothing_odd() {
+        let link = ReceivedLink::new("https://example.org/a?b=c%20d#e");
+        assert!(link.non_ascii.is_empty());
+        assert_eq!(link.non_ascii_count, 0);
+        assert_eq!(link.text, "https://example.org/a?b=c%20d#e");
+    }
+
+    // spec: OWLY-7
+    #[test]
+    fn characters_that_are_not_printable_ascii_are_named() {
+        // A Cyrillic "а" for the Latin one, a zero-width space (which
+        // `display_text` drops), a control character and a space.
+        let link = ReceivedLink::new("https://ex\u{430}mple.org/\u{200B}a\u{7}b c\u{430}");
+        assert_eq!(link.non_ascii, ["U+0430", "U+200B", "U+0007", "U+0020"]);
+        assert_eq!(link.non_ascii_count, 5);
+        assert!(!link.text.contains('\u{200B}'));
+    }
+
+    // spec: OWLY-7
+    #[test]
+    fn only_a_few_different_odd_characters_are_named() {
+        let url = format!("https://x/{}", ('\u{4E00}'..).take(20).collect::<String>());
+        let link = ReceivedLink::new(&url);
+        assert_eq!(link.non_ascii.len(), MAX_ODD_NAMED);
+        assert_eq!(link.non_ascii_count, 20);
+    }
+
+    // spec: OWLY-6
+    #[test]
+    fn a_received_batch_of_links_is_bounded_and_counted() {
+        let urls: Vec<String> = (0..MAX_LISTED + 3)
+            .map(|i| format!("https://example.org/{i}"))
+            .collect();
+        let shown = ReceivedUrls::new(1, &urls);
+        assert_eq!(shown.links.len(), MAX_LISTED);
+        assert_eq!(shown.more, 3);
     }
 
     #[test]

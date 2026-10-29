@@ -37,6 +37,15 @@ pub fn existing(items: impl IntoIterator<Item = PathBuf>) -> Result<Vec<PathBuf>
         .collect()
 }
 
+/// An on/off setting from the environment: `1` or `true`, `0` or `false`.
+pub fn flag(name: &str, value: &str) -> Result<bool, AppError> {
+    match value {
+        "1" | "true" => Ok(true),
+        "" | "0" | "false" => Ok(false),
+        _ => Err(AppError::Invalid(format!("{name} must be 1 or 0"))),
+    }
+}
+
 /// A directory for received files: absolute, so it doesn't depend on where
 /// the app was started.
 pub fn directory(path: PathBuf) -> Result<PathBuf, AppError> {
@@ -86,6 +95,15 @@ pub fn interface(name: &str) -> Result<(), AppError> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_flag_is_one_or_zero() {
+        assert!(flag("X", "1").expect("on"));
+        assert!(flag("X", "true").expect("on"));
+        assert!(!flag("X", "0").expect("off"));
+        assert!(!flag("X", "").expect("off"));
+        assert!(flag("X", "yes").is_err());
+    }
+
     use super::*;
 
     fn strings(items: &[&str]) -> Vec<String> {

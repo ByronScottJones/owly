@@ -14,6 +14,8 @@ const COMMANDS: &[&str] = &[
     "send_link",
     "set_visibility",
     "respond",
+    "open_link",
+    "set_settings",
 ];
 
 fn main() {

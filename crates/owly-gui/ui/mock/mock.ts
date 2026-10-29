@@ -1,6 +1,6 @@
 // A page for looking at the UI without the Tauri backend: development only,
 // not part of the build. `npm run dev`, then /mock/mock.html#<scenario>:
-// empty, off, people, transfer, incoming, files, doctor, problem.
+// empty, off, people, transfer, incoming, files, links, doctor, problem.
 import { emit } from "@tauri-apps/api/event";
 import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
 import { mount } from "svelte";
@@ -54,6 +54,11 @@ mockIPC(
           receiveDir: "/home/byron/Downloads/Owly",
           contactsOnlyAvailable: false,
           browsing: scenario !== "off",
+          settings: {
+            openLinks: scenario === "links",
+            openLinksFixed: false,
+            file: "/home/byron/.config/owly/owly_config.toml",
+          },
         };
       case "doctor":
         return doctorReport;
@@ -117,7 +122,24 @@ setTimeout(async () => {
     });
     await emit("urls-received", {
       id: 5,
-      urls: ["https://example.org/a-link"],
+      links: [
+        { text: "https://example.org/a-link", nonAscii: [], nonAsciiCount: 0 },
+      ],
+      more: 0,
+    });
+  }
+  if (scenario === "links") {
+    await emit("urls-received", {
+      id: 6,
+      links: [
+        { text: "https://example.org/a-link", nonAscii: [], nonAsciiCount: 0 },
+        {
+          text: "https://exаmple.org/login",
+          nonAscii: ["U+0430"],
+          nonAsciiCount: 1,
+        },
+      ],
+      more: 0,
     });
   }
 }, 300);

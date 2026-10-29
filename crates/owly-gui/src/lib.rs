@@ -11,6 +11,8 @@
 mod commands;
 mod error;
 mod model;
+mod open;
+mod settings;
 mod state;
 mod validate;
 
@@ -37,11 +39,20 @@ fn config(app: &tauri::App) -> Result<Config, Box<dyn std::error::Error>> {
     } else {
         None
     };
+    // The settings file, with OWLY_OPEN_LINKS laid over it.
+    let settings_file = settings::path(&app.path().config_dir()?);
+    let loaded = settings::load(
+        &settings_file,
+        std::env::var(settings::OPEN_LINKS_ENV).ok().as_deref(),
+    )?;
     Ok(Config {
         iface,
         name: owly_session::link::host_name()?,
         bus,
         receive_dir,
+        settings_file,
+        settings: loaded.settings,
+        fixed: loaded.fixed,
     })
 }
 
@@ -108,6 +119,8 @@ pub fn run() {
             commands::send_link,
             commands::set_visibility,
             commands::respond,
+            commands::open_link,
+            commands::set_settings,
         ])
         .build(tauri::generate_context!())
         .expect("the Owly window failed to start");
@@ -222,7 +235,7 @@ mod tests {
             .lines()
             .filter_map(|l| l.trim().strip_prefix('"')?.strip_suffix("\","))
             .collect();
-        assert_eq!(commands.len(), 12);
+        assert_eq!(commands.len(), 14);
         for command in commands {
             let permission = format!("allow-{}", command.replace('_', "-"));
             assert!(given.contains(&permission.as_str()), "missing {permission}");

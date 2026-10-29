@@ -3,6 +3,22 @@
 Every unit of work, newest first, one entry per branch. An entry holds only what was known when the work was done: git has the commits, pull request and merge time (`cargo xtask changelog` prints them, in UTC, for each entry's branch), and `cargo xtask changelog --check` fails if an entry holds one of them or has no timestamp. All timestamps are ISO 8601 UTC, the time the entry was written or last updated.
 
 ---
+### feature/open-link: an Open button for received links, and a settings file
+
+- Branch: `feature/open-link`, base `main`
+- Written: 2026-10-29T15:55:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner, who allowed the button, asked for the caution and the non-ASCII alert, and recommended the settings file and dialog); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - A received link can be opened in the browser from its card in the window, on a click, once the user has turned that on. New requirement OWLY-7 in docs/implementation.md (the authority for the window's rules), with OWLY-4 and OWLY-6 amended to point at it. The card says to check the address first; a link with any character that is not printable ASCII (counting the zero-width and reordering characters the display drops, and control characters) gets an alert naming them as code points, and its button reads "Open anyway".
+  - The setting lives in a new settings file, `~/.config/owly/owly_config.toml` (TOML; `[window] open_links`), edited by a new Preferences dialog (sidebar item, or Ctrl+,) or by hand. `OWLY_OPEN_LINKS` beats the file and fixes the setting, as configuration.md orders. The file is written `0600` in a `0700` folder through a temporary file; a file that does not parse, or has an unknown key, stops the window starting and names the file.
+  - Off by default. Turning it on from the page first asks in a dialog the backend shows (the page has no dialog permission and cannot answer it); Cancel changes nothing. This is why the setting is not simply a checkbox the page writes: the page is untrusted (OWLY-3 to OWLY-6).
+  - The page names a link by receipt and position, never its address (OWLY-5); the backend keeps the addresses of the last 16 receipts, opens only `http` and `https` links of at most 2048 characters, with `xdg-open` and no shell.
+  - Two commands (`open_link`, `set_settings`), so 14 in all; `toml` 1 is a direct dependency (already in the build).
+  - Also fixed: the `urls-received` event sent the page the links unsanitised, while the incoming prompt sanitised them (OWLY-6). They are now sanitised, bounded to 100 and counted, as the prompt's are.
+  - Verified on the VM, on Rust 1.99.1: `gui-check` (31 Rust tests, the page's tests, svelte-check, Prettier, clippy), `gui-a11y` (12 states in 2 themes, including the links card and the preferences), `gui-e2e`.
+  - Not exercised: the confirmation dialog and the browser opening (they need a graphical session), and the incoming prompt, which does not yet mark non-ASCII links (the alert is on the received card).
+
+---
 ### docs/handoff-manual-ci: HANDOFF.md says CI is manual
 
 - Branch: `docs/handoff-manual-ci`, base `main`

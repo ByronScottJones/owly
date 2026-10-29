@@ -17,6 +17,8 @@
     "allow-send-selection",
     "allow-send-link",
     "allow-set-visibility",
-    "allow-respond"
+    "allow-respond",
+    "allow-open-link",
+    "allow-set-settings"
   ]
 }

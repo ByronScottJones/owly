@@ -7,6 +7,7 @@ import {
   hueOf,
   initials,
   isFinished,
+  oddCharacters,
   percent,
   transferLabel,
 } from "./format";
@@ -122,5 +123,41 @@ describe("describeStation", () => {
     expect(describeStation({ station: "wlan0", driver: "ath9k" })).toBe(
       "wlan0 (ath9k)",
     );
+  });
+});
+
+describe("oddCharacters", () => {
+  // spec: OWLY-7
+  it("says nothing about a plain ASCII link", () => {
+    expect(
+      oddCharacters({
+        text: "https://example.org",
+        nonAscii: [],
+        nonAsciiCount: 0,
+      }),
+    ).toBeNull();
+  });
+
+  // spec: OWLY-7
+  it("names the characters and says the address may be imitating another", () => {
+    const warning = oddCharacters({
+      text: "https://exаmple.org",
+      nonAscii: ["U+0430"],
+      nonAsciiCount: 1,
+    });
+    expect(warning).toContain("1 character that is not plain ASCII");
+    expect(warning).toContain("U+0430");
+    expect(warning).toContain("imitating another address");
+  });
+
+  it("says when more were left out", () => {
+    const names = Array.from({ length: 8 }, (_, i) => `U+${4e3 + i}`);
+    const warning = oddCharacters({
+      text: "x",
+      nonAscii: names,
+      nonAsciiCount: 20,
+    });
+    expect(warning).toContain("20 characters that are not plain ASCII");
+    expect(warning).toContain(", and others");
   });
 });

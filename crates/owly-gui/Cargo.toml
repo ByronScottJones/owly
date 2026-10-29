@@ -28,10 +28,14 @@ tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-single-instance = "2"
 thiserror = "2"
+toml = "1"
 tokio = { version = "1", features = ["macros", "sync", "time"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = "2"
+
+[dev-dependencies]
+tempfile = "3"
 
 [lints]
 workspace = true

@@ -33,9 +33,12 @@ SCENARIOS = [
     ("transfer", ""),
     ("incoming", ""),
     ("files", ""),
+    ("links", ""),
     ("problem", ""),
     ("people", "document.querySelector('.person').click()"),
     ("doctor", "document.querySelectorAll('nav button')[1].click()"),
+    ("links", "document.querySelectorAll('nav button')[2].click()"),
+    ("people", "document.querySelectorAll('nav button')[2].click()"),
 ]
 AXE = (Path(__file__).parent.parent / "node_modules/axe-core/axe.min.js").read_text()
 # Titles are cut short by WebKit, so the page sends a compact summary.

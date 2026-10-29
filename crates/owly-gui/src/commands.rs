@@ -34,9 +34,10 @@ use tauri_plugin_dialog::DialogExt;
 
 use crate::error::AppError;
 use crate::model::{
-    DragPoint, Dropped, IncomingRequest, Peer, RadioStatus, ReceiveFailed, Received, ReceivedUrls,
-    SelectionInfo, Status, TransferState, TransferUpdate, Visibility, display_text,
+    DragPoint, Dropped, IncomingRequest, MAX_LISTED, Peer, RadioStatus, ReceiveFailed, Received,
+    ReceivedUrls, SelectionInfo, Status, TransferState, TransferUpdate, Visibility, display_text,
 };
+use crate::settings::{self, Change, SettingsView};
 use crate::state::{AppState, Inner, MAX_PENDING, Task};
 use crate::validate;
 
@@ -77,6 +78,11 @@ async fn build_status(state: &AppState, inner: &Inner) -> Status {
         receive_dir: state.config.receive_dir.to_string_lossy().into_owned(),
         contacts_only_available: false,
         browsing: inner.browse.is_some(),
+        settings: SettingsView {
+            open_links: inner.settings.window.open_links,
+            open_links_fixed: state.config.fixed.open_links,
+            file: state.config.settings_file.to_string_lossy().into_owned(),
+        },
     }
 }
 
@@ -521,8 +527,17 @@ async fn on_receiver_event(app: &AppHandle, event: ReceiverEvent) {
                 .remove(&id);
             emit(app, "request-withdrawn", id);
         }
-        // SEC-4: shown, never opened.
-        ReceiverEvent::Urls { id, urls } => emit(app, "urls-received", ReceivedUrls { id, urls }),
+        // SEC-4: shown, and opened only on the user's click (OWLY-7).
+        ReceiverEvent::Urls { id, urls } => {
+            let shown = ReceivedUrls::new(id, &urls);
+            let held = urls.into_iter().take(MAX_LISTED).collect();
+            app.state::<AppState>()
+                .inner
+                .lock()
+                .await
+                .keep_links(id, held);
+            emit(app, "urls-received", shown);
+        }
         ReceiverEvent::Received { id, paths } => {
             let paths = paths
                 .iter()
@@ -552,4 +567,66 @@ pub async fn respond(
         pending.decline();
     }
     Ok(())
+}
+
+/// Opens a link a device sent, in the browser, when the user has turned that
+/// on (OWLY-7). The page names the receipt and the link's position, never
+/// the address (OWLY-5).
+#[tauri::command]
+pub async fn open_link(state: State<'_, AppState>, id: u64, index: usize) -> Result<(), AppError> {
+    let url = state.inner.lock().await.link_to_open(id, index)?;
+    crate::open::open(&url)
+        .map_err(|e| AppError::Unavailable(format!("couldn't open the link: {e}")))
+}
+
+/// Changes the preferences. Turning links on first asks in a dialog of the
+/// backend's own, which the page can neither show nor answer (OWLY-7);
+/// "Cancel" leaves the setting as it was.
+#[tauri::command]
+pub async fn set_settings(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    open_links: bool,
+) -> Result<(), AppError> {
+    let current = state.inner.lock().await.settings.clone();
+    let change =
+        settings::change_open_links(current.window.open_links, state.config.fixed, open_links)?;
+    let go = match change {
+        Change::Nothing => false,
+        Change::Apply => true,
+        Change::Confirm => confirm_open_links(&app).await,
+    };
+    if go {
+        let mut inner = state.inner.lock().await;
+        let mut updated = inner.settings.clone();
+        updated.window.open_links = open_links;
+        settings::save(&state.config.settings_file, &updated)?;
+        inner.settings = updated;
+    }
+    // Also after "Cancel", so the page shows what is in force.
+    emit(&app, "status-changed", ());
+    Ok(())
+}
+
+async fn confirm_open_links(app: &AppHandle) -> bool {
+    use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
+
+    let app = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        app.dialog()
+            .message(
+                "Opening a link starts your web browser at an address chosen by someone else. \
+                 Check each address before you open it. Owly warns about addresses with unusual \
+                 characters, but it cannot tell you whether a site is safe.",
+            )
+            .title("Allow opening links from other devices?")
+            .kind(MessageDialogKind::Warning)
+            .buttons(MessageDialogButtons::OkCancelCustom(
+                "Allow".into(),
+                "Cancel".into(),
+            ))
+            .blocking_show()
+    })
+    .await
+    .unwrap_or(false)
 }

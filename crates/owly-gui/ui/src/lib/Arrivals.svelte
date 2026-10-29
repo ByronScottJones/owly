@@ -1,13 +1,17 @@
 <script lang="ts">
+  import { oddCharacters } from "./format";
   import type { Arrival } from "./model.svelte";
 
   interface Props {
     arrivals: Arrival[];
     receiveDir: string;
+    /** The preferences allow opening a received link (OWLY-7). */
+    openLinks: boolean;
     ondismiss: (key: string) => void;
+    onopen: (receipt: number, index: number) => void;
   }
 
-  let { arrivals, receiveDir, ondismiss }: Props = $props();
+  let { arrivals, receiveDir, openLinks, ondismiss, onopen }: Props = $props();
 
   const headings = {
     files: "Received",
@@ -28,17 +32,40 @@
   {#each arrivals as arrival (arrival.key)}
     <section class:failed={arrival.kind === "failed"}>
       <h2>{headings[arrival.kind]}</h2>
+      {#if arrival.kind === "urls" && openLinks}
+        <p class="caution">
+          Check the address before you open it. A link from another device can
+          lead anywhere.
+        </p>
+      {/if}
       <ul>
         {#each arrival.lines as line, i (i)}
-          <li>
+          {@const link = arrival.links?.[i]}
+          {@const odd = link ? oddCharacters(link) : null}
+          <li class:odd={odd !== null}>
             <span class="text">{line}</span>
             {#if arrival.kind === "urls"}
               <button type="button" class="plain" onclick={() => copy(line)}
                 >Copy</button
               >
+              {#if openLinks && arrival.receipt !== undefined}
+                {@const receipt = arrival.receipt}
+                <button
+                  type="button"
+                  class="plain"
+                  onclick={() => onopen(receipt, i)}
+                  >{odd ? "Open anyway" : "Open"}</button
+                >
+              {/if}
             {/if}
           </li>
+          {#if odd}
+            <li class="warning" role="alert">{odd}</li>
+          {/if}
         {/each}
+        {#if arrival.more}
+          <li class="where">and {arrival.more} more not listed</li>
+        {/if}
       </ul>
       {#if arrival.kind === "files"}
         <p class="where">In {receiveDir}</p>
@@ -92,6 +119,21 @@
   .text {
     flex: 1;
     overflow-wrap: anywhere;
+  }
+
+  .caution {
+    margin: 0 0 6px;
+    color: var(--text-quiet);
+    font-size: 0.9em;
+  }
+
+  li.warning {
+    display: block;
+    margin: 0 0 6px;
+    padding: 6px 8px;
+    border: 1px solid var(--danger);
+    border-radius: 6px;
+    font-size: 0.9em;
   }
 
   .where {
