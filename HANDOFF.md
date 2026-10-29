@@ -4,7 +4,7 @@ What is left, and where to resume. Open items only; finished work is in [CHANGEL
 
 ## 1. Status
 
-- Updated: 2026-10-29T15:26:00Z
+- Updated: 2026-10-29T15:35:00Z
 - In flight: none.
 - Verified on 2026-10-27 on the Ubuntu 26.04 VM (no Wi-Fi card), before GitHub's CI could run again: `just ci`, `gui-check`, `gui-a11y`, `hwsim`, `gui-e2e`, `gui-build`, `just fuzz 60`, and the `owly` and `owly-gui` `.deb`s installed with `apt`. The VM runs `kernel.apparmor_restrict_unprivileged_userns=0` until it reboots.
 - GitHub's CI is running again and passed on `main` on 2026-10-29: `ci.yml` (`check`, `gui`, `fuzz`, `hwsim`) and `packages.yml` (Nix, AUR, `.deb`, `.rpm`, the window's `.deb`, and the install checks on Ubuntu 22.04 and 24.04, Debian 12 and 13, and Fedora 44). Both workflows now run only when started by hand (Actions tab, or `ghx workflow run ci.yml`), to save the allocation, so nothing guards `main` automatically: run `just ci` and `just gui-check gui-a11y gui-e2e` on the VM before a merge, and start both workflows before a release.
@@ -26,7 +26,7 @@ None.
 | H-3 | Contacts Only | The selector lists it but refuses it until an Apple identity exists (docs/implementation.md, "Identity") | Choosing it works with an imported identity, and a test covers it | Byron | Identity import for `owly-airdrop` |
 | H-5 | Drag and drop, and the native picker | Not exercised: Xvfb has no desktop to drop from | Dropping files on a person, and Add Files and Add Folder, send them, on GNOME and KDE | Byron | A graphical session on the VM or another computer |
 | H-8 | Review the accepted advisory | `glib` (RUSTSEC-2024-0429, via Tauri's GTK 3 bindings) is ignored in `deny.toml` with a review date (reviewed 2026-10-27: Tauri 2.12.5 and 3.0.0-alpha.5 still use gtk-rs 0.18, so nothing to move to yet) | Reviewed, or Tauri's bindings moved, before 2027-01-27 | Byron | |
-| H-9 | A first-run check of ENGINEERING.md | It was written by the people who know the code | A reviewer given only ENGINEERING.md lists what they would have to guess, and the gaps are filled | Byron | |
+| H-9 | Who may loosen OWLY-3 to OWLY-6 | docs/implementation.md is the authority for the window's requirements (decided 2026-10-29); the file does not say who approves a change to them, or which rules are expected to change | The owner has said which rules, if any, need loosening and who approves; ENGINEERING.md and implementation.md say so | Byron | |
 
 ## 5. Decisions needed
 

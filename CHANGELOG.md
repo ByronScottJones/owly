@@ -3,6 +3,15 @@
 Every unit of work, newest first, one entry per branch. An entry holds only what was known when the work was done: git has the commits, pull request and merge time (`cargo xtask changelog` prints them, in UTC, for each entry's branch), and `cargo xtask changelog --check` fails if an entry holds one of them or has no timestamp. All timestamps are ISO 8601 UTC, the time the entry was written or last updated.
 
 ---
+### docs/engineering-gaps-2: the second cold read of ENGINEERING.md
+
+- Branch: `docs/engineering-gaps-2`, base `main`
+- Written: 2026-10-29T15:35:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner and reviewer); Claude, claude-sonnet-5-5 (Claude Code, implementer and the reviewer subagent)
+- What it did:
+  - A second subagent, given only ENGINEERING.md, listed what it would still guess. The facts were checked against the repo and added: the apt packages and where `just`, Rust and Node come from; that `just install` builds and that owlyd starts on demand; how to run the window; how to run `owly-session`'s veth test and what it needs; the format of a CHANGELOG entry (pointer), what "upstream" is, where `AUR_SSH_KEY` comes from; that checks run before a merge and the owner merges; where the command count appears (three places); one-line meanings of AWDL, lease, polkit, the BLE advert, Everyone and Contacts Only, hwsim, the fake radio, `ghx` and omdrop-owl.
+  - The one contradiction it found is settled by the owner: docs/implementation.md, "The window", is the authority for OWLY-3 to OWLY-6, and ENGINEERING.md says so (line 7 and section 2), with OWLY-5's "canonical form" added to match. Still open: who approves a loosening of those rules (H-9), and whether `gui-e2e` is a merge requirement (HANDOFF section 5).
+  - Not done: a third read. The remaining gaps are decisions, not missing facts.
 ### chore/aur-publish-off: no publishing to the AUR until there is a key
 
 - Branch: `chore/aur-publish-off`, base `main`
