@@ -3,6 +3,18 @@
 Every unit of work, newest first, one entry per branch. An entry holds only what was known when the work was done: git has the commits, pull request and merge time (`cargo xtask changelog` prints them, in UTC, for each entry's branch), and `cargo xtask changelog --check` fails if an entry holds one of them or has no timestamp. All timestamps are ISO 8601 UTC, the time the entry was written or last updated.
 
 ---
+### chore/sync-upstream-2: five more upstream commits
+
+- Branch: `chore/sync-upstream-2`, base `main`
+- Written: 2026-10-29T18:10:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner, who noticed the fork was behind); Claude, claude-sonnet-5-5 (Claude Code, reviewer and implementer)
+- What it did:
+  - Merged `t4t5/owly` main (five commits) after reading each diff. None touches the window or `owly-session`, so there were no conflicts.
+  - owlyd re-reads `/etc/owly/radio.toml` (and `drivers.toml`) when the radio comes up and for each probe, so edits need no restart; `Injection::prober` is gone for `owly_radio::probe::from_config`.
+  - `owly test-card` now fails its baseline when the gateway answers nothing over Wi-Fi, and skips the after-teardown check, saying why (a strict reverse path check can drop the replies when Ethernet is on the same network).
+  - The polkit refusal message says polkit allows a local session and asks others, such as SSH, for a password, and names the action.
+  - README: the Intel 9260 and AX210 rows, a second AX200 machine, a note about restarting a stuck iPhone, and the re-read of the radio settings; two new test-card reports under `hardware/`.
+  - Verified on the VM: `just ci` and `just gui-check`.
 ### docs/h9-approvals: the owner's answers on loosening the window's rules
 
 - Branch: `docs/h9-approvals`, base `main`
