@@ -5,10 +5,11 @@
 # would break the next release fails here instead.
 name: Packages
 
+# Started by hand (Actions tab, or `ghx workflow run <file>`) to save the CI
+# allocation: during development the same checks run on the VM (ENGINEERING.md,
+# section 10).
 on:
-  pull_request:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   aur:

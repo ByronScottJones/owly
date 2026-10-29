@@ -3,10 +3,11 @@
 # per target, each radio mode on mac80211_hwsim, and the GUI's checks.
 name: CI
 
+# Started by hand (Actions tab, or `ghx workflow run <file>`) to save the CI
+# allocation: during development the same checks run on the VM (ENGINEERING.md,
+# section 10).
 on:
-  pull_request:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   check:
