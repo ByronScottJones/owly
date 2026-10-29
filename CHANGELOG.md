@@ -3,6 +3,16 @@
 Every unit of work, newest first, one entry per branch. An entry holds only what was known when the work was done: git has the commits, pull request and merge time (`cargo xtask changelog` prints them, in UTC, for each entry's branch), and `cargo xtask changelog --check` fails if an entry holds one of them or has no timestamp. All timestamps are ISO 8601 UTC, the time the entry was written or last updated.
 
 ---
+### docs/close-h7: the new CI jobs have run on GitHub
+
+- Branch: `docs/close-h7`, base `main`
+- Written: 2026-10-29T14:49:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner and reviewer); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - Closes H-7 in HANDOFF.md. With Actions credits back, GitHub's CI passed on `main` after the `cargo-deny` fix: `ci.yml` (`check`, `gui`, `fuzz`, `hwsim`) and `packages.yml` (Nix, AUR, `.deb`, `.rpm`, `gui-deb`, and the install checks on Ubuntu 22.04 and 24.04, Debian 12 and 13, and Fedora 44). The Nix job building with `rust-version = "1.98"` also confirms that choice.
+  - The decision about `just gui-e2e` in CI no longer says CI cannot run it.
+
+---
 ### fix/ci-install-cargo-deny: `cargo deny` missing from the CI runner
 
 - Branch: `fix/ci-install-cargo-deny`, base `main`
