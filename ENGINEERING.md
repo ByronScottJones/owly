@@ -4,7 +4,7 @@
 - Last reviewed against the code: 2026-10-24T22:20:00Z
 - Base branch: `main`
 
-This is the primary specification of the project as built, with one exception: for the window's requirements (OWLY-3 to OWLY-6), [docs/implementation.md](docs/implementation.md), "The window", is the authority. This file repeats them, and where the two differ, that document is right and this file is the defect. When the code, [README.md](README.md) or [AGENTS.md](AGENTS.md) disagrees with it, that is a defect to settle in the same change. [HANDOFF.md](HANDOFF.md) lists what is left and [CHANGELOG.md](CHANGELOG.md) what has been done. The AirDrop protocol itself is specified, without any implementation, in [docs/SPEC.md](docs/SPEC.md); what Owly does where the spec leaves a choice, and its workarounds, are in [docs/implementation.md](docs/implementation.md) with `OWLY-n` IDs; the conformance tests are in [docs/conformance.md](docs/conformance.md). This file does not repeat them. It covers the project as built and, in full, the part added by the window (`owly-session` and `owly-gui`).
+This is the primary specification of the project as built, with one exception: for the window's requirements (OWLY-3 to OWLY-6), [docs/implementation.md](docs/implementation.md), "The window", is the authority. This file repeats them, and where the two differ, that document is right and this file is the defect. A change that loosens one of them (OWLY-3 to OWLY-7) needs the owner's approval: a pull request that edits that document, the test and the CHANGELOG together, which the owner merges. When the code, [README.md](README.md) or [AGENTS.md](AGENTS.md) disagrees with it, that is a defect to settle in the same change. [HANDOFF.md](HANDOFF.md) lists what is left and [CHANGELOG.md](CHANGELOG.md) what has been done. The AirDrop protocol itself is specified, without any implementation, in [docs/SPEC.md](docs/SPEC.md); what Owly does where the spec leaves a choice, and its workarounds, are in [docs/implementation.md](docs/implementation.md) with `OWLY-n` IDs; the conformance tests are in [docs/conformance.md](docs/conformance.md). This file does not repeat them. It covers the project as built and, in full, the part added by the window (`owly-session` and `owly-gui`).
 
 ## 1. Overview
 
@@ -34,7 +34,7 @@ The window adds these (docs/implementation.md, "The window", is the normative te
 | OWLY-4 | The page may only listen for events and call the app's own commands, each allowed by name; no dialog, file-system, shell, window or webview permission; every command needs a permission of its own. |
 | OWLY-5 | The page never names a path or an address: files go by the id of a backend-held selection (at most 8), people by the id of the last scan. The backend resolves a selection's paths to existing files or folders in canonical form, and accepts only absolute receive folders, `http` and `https` links of at most 2048 characters, and interface names of the usual form. |
 | OWLY-6 | Text from the other device is shown and never acted on: controls replaced, bidirectional-override and zero-width characters dropped, lengths bounded, at most 100 files or links listed per request with a count of the rest. |
-| OWLY-7 | A received link is opened only on the user's click, only once they have turned that on in the preferences (off by default); the page names it by receipt and position, the backend opens only `http` and `https` links, the window says to check the address and alerts, naming them, when it has a character that is not printable ASCII, and turning the setting on first asks in a dialog the page cannot show or answer. |
+| OWLY-7 | A received link is opened only on the user's click, only once they have turned that on in the preferences (off by default); the page names it by receipt and position, the backend opens only `http` and `https` links, the window says to check the address and alerts, naming them, when it has a character that is not printable ASCII or a punycode (`xn--`) host, on the incoming prompt as well as the received card, and turning the setting on first asks in a dialog the page cannot show or answer. |
 
 Further requirements of the window, each with the test or check that holds it:
 
@@ -122,7 +122,7 @@ To add a command: write it in `commands.rs` with `#[tauri::command]`; add it to 
 
 - Received files go in the receive folder under the names the other device offered, made safe by `owly-airdrop`'s sandboxed extraction (UP-*, never overwriting a file).
 - The TLS identity of the receiver is `$XDG_STATE_HOME/owly` (else `~/.local/state/owly`), generated on first use and shared with the CLI.
-- Links are text, shown with a note of any character that is not plain ASCII. They are opened only on a click, once the user has turned that on (OWLY-7, SEC-4).
+- Links are text, shown with a note of any character that is not plain ASCII, or a punycode host. They are opened only on a click, once the user has turned that on (OWLY-7, SEC-4).
 - Nothing is stored by the page: no cookies, no local storage.
 
 ## 5. Behaviour
@@ -280,7 +280,7 @@ CI (`.github/workflows`) runs only when started by hand, from the Actions tab or
 | OWLY-4 | `the_window_can_only_listen_and_call_the_listed_commands`, `every_command_in_the_manifest_has_a_permission` |
 | OWLY-5 | `state.rs`: `the_oldest_selection_goes_first`; `validate.rs`: six tests |
 | OWLY-6 | `model.rs`: `controls_are_replaced_and_reordering_dropped`, `long_text_is_cut_with_an_ellipsis`, `an_offer_is_bounded_and_counted` |
-| OWLY-7 | `settings.rs`: five tests (defaults, a saved file's modes, the environment over the file, turning on needs a confirmation); `state.rs`: `a_link_opens_only_when_links_are_on`, `a_link_is_named_by_receipt_and_position_and_must_be_http`, `the_oldest_receipt_of_links_goes_first`; `model.rs`: three tests of the non-ASCII check; `model.test.ts` and `format.test.ts`. Not exercised end to end: the backend's confirmation dialog and the browser opening (HANDOFF section 6) |
+| OWLY-7 | `settings.rs`: five tests (defaults, a saved file's modes, the environment over the file, turning on needs a confirmation); `state.rs`: `a_link_opens_only_when_links_are_on`, `a_link_is_named_by_receipt_and_position_and_must_be_http`, `the_oldest_receipt_of_links_goes_first`; `model.rs`: tests of the non-ASCII check, the punycode check and the incoming prompt; `model.test.ts` and `format.test.ts`. Not exercised end to end: the backend's confirmation dialog and the browser opening (HANDOFF section 6) |
 | GUI-1, GUI-2 | `just gui-a11y`: 12 states in 2 themes |
 | GUI-3, GUI-5, GUI-6 | `just gui-e2e`; `tests/gui-e2e/run.sh` |
 | The session calls | `crates/owly-session/tests/session.rs`: the lease, a scan, a file and a link each way, the release |

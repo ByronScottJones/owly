@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { oddCharacters } from "./format";
+  import { linkWarnings } from "./format";
   import type { Arrival } from "./model.svelte";
 
   interface Props {
@@ -41,8 +41,8 @@
       <ul>
         {#each arrival.lines as line, i (i)}
           {@const link = arrival.links?.[i]}
-          {@const odd = link ? oddCharacters(link) : null}
-          <li class:odd={odd !== null}>
+          {@const warnings = link ? linkWarnings(link) : []}
+          <li class:odd={warnings.length > 0}>
             <span class="text">{line}</span>
             {#if arrival.kind === "urls"}
               <button type="button" class="plain" onclick={() => copy(line)}
@@ -54,14 +54,14 @@
                   type="button"
                   class="plain"
                   onclick={() => onopen(receipt, i)}
-                  >{odd ? "Open anyway" : "Open"}</button
+                  >{warnings.length > 0 ? "Open anyway" : "Open"}</button
                 >
               {/if}
             {/if}
           </li>
-          {#if odd}
-            <li class="warning" role="alert">{odd}</li>
-          {/if}
+          {#each warnings as warning (warning)}
+            <li class="warning" role="alert">{warning}</li>
+          {/each}
         {/each}
         {#if arrival.more}
           <li class="where">and {arrival.more} more not listed</li>

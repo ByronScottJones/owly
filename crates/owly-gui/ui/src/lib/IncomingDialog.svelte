@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { IncomingRequest } from "./api";
-  import { formatSize } from "./format";
+  import { formatSize, linkWarnings } from "./format";
 
   interface Props {
     request: IncomingRequest | undefined;
@@ -16,7 +16,7 @@
     request
       ? request.offer.type === "files"
         ? request.offer.files.length + request.offer.more
-        : request.offer.urls.length + request.offer.more
+        : request.offer.links.length + request.offer.more
       : 0,
   );
   let noun = $derived(request?.offer.type === "urls" ? "link" : "item");
@@ -59,8 +59,11 @@
           </li>
         {/each}
       {:else}
-        {#each request.offer.urls as url, i (i)}
-          <li><span class="file">{url}</span></li>
+        {#each request.offer.links as link, i (i)}
+          <li><span class="file">{link.text}</span></li>
+          {#each linkWarnings(link) as warning (warning)}
+            <li class="warning" role="alert">{warning}</li>
+          {/each}
         {/each}
         <li class="quiet">Links are shown here, and never opened for you.</li>
       {/if}
@@ -114,6 +117,14 @@
 
   .file {
     overflow-wrap: anywhere;
+  }
+
+  li.warning {
+    display: block;
+    padding: 6px 8px;
+    border: 1px solid var(--danger);
+    border-radius: 6px;
+    font-size: 0.9em;
   }
 
   .quiet {

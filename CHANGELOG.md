@@ -3,6 +3,17 @@
 Every unit of work, newest first, one entry per branch. An entry holds only what was known when the work was done: git has the commits, pull request and merge time (`cargo xtask changelog` prints them, in UTC, for each entry's branch), and `cargo xtask changelog --check` fails if an entry holds one of them or has no timestamp. All timestamps are ISO 8601 UTC, the time the entry was written or last updated.
 
 ---
+### docs/h9-approvals: the owner's answers on loosening the window's rules
+
+- Branch: `docs/h9-approvals`, base `main`
+- Written: 2026-10-29T17:40:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner, who gave the approvals); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - Records who approves a change to OWLY-3 to OWLY-7 (the owner, by merging a pull request that edits docs/implementation.md, the test and the CHANGELOG) in docs/implementation.md and ENGINEERING.md. H-9 is closed.
+  - Approved by the owner but not built, now H-10 and H-11 in HANDOFF: thumbnails of received images, and a "Show in folder" button for a received file with no option to open it.
+  - Confirmed as built: `http` and `https` links, and the link-opening setting off by default.
+  - OWLY-7 now also alerts on a punycode (`xn--`) host, and the incoming prompt, which asks whether to accept a link, shows the same alerts as the received card. The prompt's links are now `ReceivedLink`s, not plain text, so the event's shape changed for the page.
+  - H-2 (a real card and phone) is deferred by the owner until a Linux computer with a supported card is set up.
 ### feature/open-link: an Open button for received links, and a settings file
 
 - Branch: `feature/open-link`, base `main`

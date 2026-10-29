@@ -60,7 +60,18 @@ function request(id: number): IncomingRequest {
     id,
     senderName: "iPhone",
     senderModel: "iPhone15,2",
-    offer: { type: "urls", urls: ["https://example.org"], more: 0 },
+    offer: {
+      type: "urls",
+      links: [
+        {
+          text: "https://example.org",
+          nonAscii: [],
+          nonAsciiCount: 0,
+          punycode: false,
+        },
+      ],
+      more: 0,
+    },
   };
 }
 
@@ -147,11 +158,17 @@ describe("Model", () => {
       text: "https://ex\u0430mple.org",
       nonAscii: ["U+0430"],
       nonAsciiCount: 1,
+      punycode: false,
     };
     emit("urls-received", {
       id: 5,
       links: [
-        { text: "https://example.org", nonAscii: [], nonAsciiCount: 0 },
+        {
+          text: "https://example.org",
+          nonAscii: [],
+          nonAsciiCount: 0,
+          punycode: false,
+        },
         odd,
       ],
       more: 2,

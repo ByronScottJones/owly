@@ -22,11 +22,12 @@ None.
 
 | ID | Item | Why | Done when | Owner | Blocked by |
 |---|---|---|---|---|---|
-| H-2 | Try the window on a real card and phone | Nothing has run against a real `owlyd` with polkit, or a real iPhone | Turn On takes the radio; the phone is listed; a file and a link go each way; closing the window gives Wi-Fi back (OWLY-3 to OWLY-6, and the leaving rule in implementation.md) | Byron | A supported card |
+| H-2 | Try the window on a real card and phone | Nothing has run against a real `owlyd` with polkit, or a real iPhone | Turn On takes the radio; the phone is listed; a file and a link go each way; closing the window gives Wi-Fi back (OWLY-3 to OWLY-6, and the leaving rule in implementation.md) | Byron | A supported card; deferred by the owner until a Linux computer with one is set up (2026-10-29) |
 | H-3 | Contacts Only | The selector lists it but refuses it until an Apple identity exists (docs/implementation.md, "Identity") | Choosing it works with an imported identity, and a test covers it | Byron | Identity import for `owly-airdrop` |
 | H-5 | Drag and drop, and the native picker | Not exercised: Xvfb has no desktop to drop from | Dropping files on a person, and Add Files and Add Folder, send them, on GNOME and KDE | Byron | A graphical session on the VM or another computer |
 | H-8 | Review the accepted advisory | `glib` (RUSTSEC-2024-0429, via Tauri's GTK 3 bindings) is ignored in `deny.toml` with a review date (reviewed 2026-10-27: Tauri 2.12.5 and 3.0.0-alpha.5 still use gtk-rs 0.18, so nothing to move to yet) | Reviewed, or Tauri's bindings moved, before 2027-01-27 | Byron | |
-| H-9 | Who may loosen OWLY-3 to OWLY-6 | docs/implementation.md is the authority for the window's requirements (decided 2026-10-29); the file does not say who approves a change to them, or which rules are expected to change | The owner has said which rules, if any, need loosening and who approves; ENGINEERING.md and implementation.md say so | Byron | |
+| H-10 | Thumbnails of received images | Approved by the owner 2026-10-29 (a loosening of OWLY-3 and OWLY-6); not built | A received image shows as a thumbnail the backend makes, with the narrowest CSP exception that allows it, the requirement and test changed in the same PR | Claude | |
+| H-11 | "Show in folder" for a received file | Approved by the owner 2026-10-29, with no option to open the file (OWLY-6, SEC-4); not built | A received file has a button that shows it in the file manager, named by receipt and position as links are; opening it stays refused | Claude | |
 
 ## 5. Decisions needed
 
