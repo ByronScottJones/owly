@@ -11,6 +11,18 @@ Every unit of work, newest first, one entry per branch. An entry holds only what
 - What it did:
   - `just ci` runs `cargo deny check` (added with the window), but the `check` job installed only `just`, so on GitHub it failed with "no such command: `deny`". It had not run there before: the window's branch was verified on the VM while Actions credits were out. `ci.yml` now installs `cargo-deny` beside `just`. The first run on `main` after the Rust 1.98 bump failed this way, with `gui`, `hwsim`, `fuzz` and the Packages workflow passing.
   - Not checked until it runs on GitHub: whether anything after `cargo deny` in `just ci` also needs a tool the runner lacks (the VM has them all).
+### feature/tauri-2.12: Tauri 2.11 to 2.12
+
+- Branch: `feature/tauri-2.12`, base `main`
+- Written: 2026-10-29T13:47:00Z
+- Worked on by: Byron Scott Jones (ByronScottJones, owner and reviewer); Claude, claude-sonnet-5-5 (Claude Code, implementer)
+- What it did:
+  - `tauri` 2.11.6 to 2.12.5 (needs Rust 1.90), with `tauri-build` 2.7.4, `tauri-plugin-dialog` 2.8.4, `tauri-plugin-single-instance` 2.5.5, `wry` 0.57.1 and the rest of what they pull in (`Cargo.lock`); `@tauri-apps/api` and `@tauri-apps/cli` to `~2.12.0`, since Tauri checks that their minor version matches the crate's. No source or configuration changed.
+  - `crypto-bigint` 0.7.7 to 0.7.10 (and `ctutils` 0.4.5 to 0.4.7) in the same branch: 0.7.7 was yanked upstream after the last run, and `cargo deny` fails on a yanked crate. It is `p256`'s dependency, not Tauri's.
+  - `glib` stays at 0.18.5: Tauri 2.12 still uses gtk-rs 0.18, so the accepted advisory (RUSTSEC-2024-0429) stands.
+  - Verified on the VM, on Rust 1.99.1: `just ci` (with `cargo deny`), `gui-check`, `gui-a11y` and `gui-e2e`.
+  - `npm audit` now reports 2 low advisories (`deepmerge`, via `@sveltejs/vite-plugin-svelte`, no fix available). They are not from this change (the plugin is unchanged); ENGINEERING.md section 9 and HANDOFF.md section 6 say so.
+  - Not checked: the window on a real card and phone (H-2), the `.deb` build and installs on GitHub.
 
 ---
 ### chore/rust-1.98: the minimum Rust version, 1.88 to 1.98
